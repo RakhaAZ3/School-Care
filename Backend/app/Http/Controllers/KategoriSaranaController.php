@@ -4,62 +4,103 @@ namespace App\Http\Controllers;
 
 use App\Models\KategoriSarana;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class KategoriSaranaController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Tampilkan semua data kategori sarana.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $kategori = KategoriSarana::latest()->get();
+
+        return response()->json([
+            'data' => $kategori,
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Simpan data kategori sarana baru.
      */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_kategori' => ['required', 'string', 'max:255', 'unique:kategori_sarana,nama_kategori'],
+            'keterangan' => ['nullable', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $kategori = KategoriSarana::create($validator->validated());
+
+        return response()->json([
+            'message' => 'Kategori sarana berhasil ditambahkan',
+            'data' => $kategori,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Tampilkan detail satu kategori sarana beserta sarana di dalamnya.
      */
-    public function store(Request $request)
+    public function show(KategoriSarana $kategoriSarana): JsonResponse
     {
-        //
+        return response()->json([
+            'data' => $kategoriSarana->load('sarana'),
+        ]);
     }
 
     /**
-     * Display the specified resource.
+     * Update data kategori sarana.
      */
-    public function show(KategoriSarana $kategoriSarana)
+    public function update(Request $request, KategoriSarana $kategoriSarana): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_kategori' => [
+                'sometimes', 'string', 'max:255',
+                'unique:kategori_sarana,nama_kategori,' . $kategoriSarana->id,
+            ],
+            'keterangan' => ['nullable', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $kategoriSarana->update($validator->validated());
+
+        return response()->json([
+            'message' => 'Kategori sarana berhasil diperbarui',
+            'data' => $kategoriSarana,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Hapus data kategori sarana.
+     * Catatan: akan gagal kalau kategori ini masih dipakai oleh data sarana
+     * (karena foreign key kategori_id di tabel sarana tidak nullable).
      */
-    public function edit(KategoriSarana $kategoriSarana)
+    public function destroy(KategoriSarana $kategoriSarana): JsonResponse
     {
-        //
-    }
+        if ($kategoriSarana->sarana()->exists()) {
+            return response()->json([
+                'message' => 'Kategori tidak bisa dihapus karena masih dipakai oleh data sarana',
+            ], 422);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, KategoriSarana $kategoriSarana)
-    {
-        //
-    }
+        $kategoriSarana->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(KategoriSarana $kategoriSarana)
-    {
-        //
+        return response()->json([
+            'message' => 'Kategori sarana berhasil dihapus',
+        ]);
     }
 }
