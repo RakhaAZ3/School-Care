@@ -11,6 +11,8 @@
         <p>Silakan masukkan akun untuk mengakses panel sistem.</p>
       </div>
 
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
       <form @submit.prevent="handleLogin" class="auth-form">
         <div class="form-group">
           <label>Email Pengguna</label>
@@ -32,8 +34,8 @@
           />
         </div>
 
-        <button type="submit" class="btn-submit">
-          Masuk Sekarang 🚀
+        <button type="submit" class="btn-submit" :disabled="isLoading">
+          {{ isLoading ? 'Memproses...' : 'Masuk Sekarang 🚀' }}
         </button>
       </form>
 
@@ -48,16 +50,40 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../../utils/api'
 
 const router = useRouter()
 const email = ref('')
 const password = ref('')
+const errorMessage = ref('')
+const isLoading = ref(false)
 
-const handleLogin = () => {
-  // Simulasi login sukses
-  localStorage.setItem('isLoggedIn', 'true')
-  alert('Login Berhasil! Mengarahkan ke Dashboard...')
-  router.push('/admin') // atau sesuaikan dengan route dashboard kamu
+const handleLogin = async () => {
+  errorMessage.value = ''
+  isLoading.value = true
+
+  try {
+    const response = await api.post('/login', {
+      email: email.value,
+      password: password.value,
+    })
+
+    localStorage.setItem('access_token', response.data.access_token)
+    localStorage.setItem('user', JSON.stringify(response.data.user))
+    localStorage.setItem('isLoggedIn', 'true')
+
+    router.push('/admin') // atau sesuaikan dengan route dashboard kamu
+  } catch (error) {
+    if (error.response?.status === 422 || error.response?.status === 401) {
+      errorMessage.value = 'Email atau password salah.'
+    } else if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Terjadi kesalahan, coba lagi.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -127,6 +153,17 @@ const handleLogin = () => {
 .text-primary { color: #2563eb; }
 .auth-header p { margin: 0; color: #64748b; font-size: 0.9rem; }
 
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -175,9 +212,14 @@ const handleLogin = () => {
   margin-top: 10px;
 }
 
-.btn-submit:hover {
+.btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .auth-footer {
