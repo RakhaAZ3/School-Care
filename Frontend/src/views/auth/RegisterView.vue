@@ -11,6 +11,8 @@
         <p>Buat akun baru untuk mulai menggunakan sistem inventaris.</p>
       </div>
 
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+
       <form @submit.prevent="handleRegister" class="auth-form">
         <div class="form-group">
           <label>Nama Lengkap & Gelar</label>
@@ -37,13 +39,14 @@
           <input 
             type="password" 
             v-model="password" 
-            placeholder="••••••••" 
+            placeholder="minimal 8 karakter" 
             required 
+            minlength="8"
           />
         </div>
 
-        <button type="submit" class="btn-submit">
-          Daftar Sekarang ✨
+        <button type="submit" class="btn-submit" :disabled="isLoading">
+          {{ isLoading ? 'Memproses...' : 'Daftar Sekarang ✨' }}
         </button>
       </form>
 
@@ -58,15 +61,47 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../../utils/api'
 
 const router = useRouter()
 const name = ref('')
 const email = ref('')
 const password = ref('')
+const errorMessage = ref('')
+const isLoading = ref(false)
 
-const handleRegister = () => {
-  alert('Registrasi Berhasil! Silakan masuk menggunakan akun baru kamu.')
-  router.push('/login')
+const handleRegister = async () => {
+  errorMessage.value = ''
+  isLoading.value = true
+
+  try {
+    const response = await api.post('/register', {
+      name: name.value,
+      email: email.value,
+      password: password.value,
+      // Form ini cuma punya 1 field password, jadi konfirmasinya
+      // disamakan otomatis (backend tetap wajib validasi "confirmed")
+      password_confirmation: password.value,
+    })
+
+    localStorage.setItem('access_token', response.data.access_token)
+    localStorage.setItem('user', JSON.stringify(response.data.user))
+
+    alert('Registrasi Berhasil! Silakan masuk menggunakan akun baru kamu.')
+    router.push('/login')
+  } catch (error) {
+    if (error.response?.status === 422) {
+      // Error validasi dari Laravel, contoh: email sudah dipakai
+      const errors = error.response.data.errors
+      errorMessage.value = Object.values(errors).flat().join(' ')
+    } else if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Terjadi kesalahan, coba lagi.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -136,6 +171,17 @@ const handleRegister = () => {
 .text-primary { color: #2563eb; }
 .auth-header p { margin: 0; color: #64748b; font-size: 0.9rem; }
 
+.error-message {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -184,9 +230,14 @@ const handleRegister = () => {
   margin-top: 10px;
 }
 
-.btn-submit:hover {
+.btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
+}
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .auth-footer {

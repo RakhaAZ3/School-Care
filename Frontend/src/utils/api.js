@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Buat instance axios dengan base URL API Laravel
 const api = axios.create({
-  baseURL: 'http://10.77.205.119:8000/api',
+  baseURL: 'http://localhost:8000/api',
 })
 
 // Interceptor: otomatis tambahkan token di setiap request
