@@ -16,8 +16,15 @@ class Ruangan extends Model
         'nama_ruangan',
         'gedung',
         'lantai',
-        'keterangan',
+        'score',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'score' => 'integer',
+        ];
+    }
 
     /**
      * Relasi: satu Ruangan bisa menyimpan banyak Sarana
