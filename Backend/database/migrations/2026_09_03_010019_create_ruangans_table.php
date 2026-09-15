@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('nama_ruangan');   // Lab Komputer 1, Ruang Kelas X-A, dst
             $table->string('gedung')->nullable();
             $table->string('lantai')->nullable();
-            $table->text('keterangan')->nullable();
+            $table->integer('score')->default(0);
             $table->timestamps();
         });
     }

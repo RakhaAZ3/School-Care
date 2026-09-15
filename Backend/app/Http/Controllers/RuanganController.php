@@ -4,62 +4,99 @@ namespace App\Http\Controllers;
 
 use App\Models\Ruangan;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class RuanganController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Tampilkan semua data ruangan.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        $ruangan = Ruangan::latest()->get();
+
+        return response()->json([
+            'data' => $ruangan,
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Simpan data ruangan baru.
      */
-    public function create()
+    public function store(Request $request): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_ruangan' => ['required', 'string', 'max:255'],
+            'gedung' => ['nullable', 'string', 'max:255'],
+            'lantai' => ['nullable', 'string', 'max:255'],
+            'score' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $ruangan = Ruangan::create($validator->validated());
+
+        return response()->json([
+            'message' => 'Ruangan berhasil ditambahkan',
+            'data' => $ruangan,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Tampilkan detail satu ruangan beserta sarana di dalamnya.
      */
-    public function store(Request $request)
+    public function show(Ruangan $ruangan): JsonResponse
     {
-        //
+        return response()->json([
+            'data' => $ruangan->load('sarana'),
+        ]);
     }
 
     /**
-     * Display the specified resource.
+     * Update data ruangan.
      */
-    public function show(Ruangan $ruangan)
+    public function update(Request $request, Ruangan $ruangan): JsonResponse
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_ruangan' => ['sometimes', 'string', 'max:255'],
+            'gedung' => ['nullable', 'string', 'max:255'],
+            'lantai' => ['nullable', 'string', 'max:255'],
+            'score' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $ruangan->update($validator->validated());
+
+        return response()->json([
+            'message' => 'Ruangan berhasil diperbarui',
+            'data' => $ruangan,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Hapus data ruangan.
+     * Catatan: kolom ruangan_id di tabel sarana nullable, jadi kalau ruangan
+     * dihapus, sarana yang ada di dalamnya tidak ikut terhapus — cuma
+     * ruangan_id-nya jadi null (lihat onDelete di migration sarana).
      */
-    public function edit(Ruangan $ruangan)
+    public function destroy(Ruangan $ruangan): JsonResponse
     {
-        //
-    }
+        $ruangan->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Ruangan $ruangan)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Ruangan $ruangan)
-    {
-        //
+        return response()->json([
+            'message' => 'Ruangan berhasil dihapus',
+        ]);
     }
 }

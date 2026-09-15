@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\KategoriSaranaController;
+use App\Http\Controllers\RuanganController;
 use Illuminate\Support\Facades\Route;
 
 // ==== Route Publik (tidak perlu login) ====
@@ -14,10 +15,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // CRUD Kategori Sarana
-    // GET    /api/kategori-sarana        -> index
-    // POST   /api/kategori-sarana        -> store
-    // GET    /api/kategori-sarana/{id}   -> show
-    // PUT    /api/kategori-sarana/{id}   -> update
-    // DELETE /api/kategori-sarana/{id}   -> destroy
     Route::apiResource('kategori-sarana', KategoriSaranaController::class);
+
+    // CRUD Ruangan
+    // GET    /api/ruangan        -> index
+    // POST   /api/ruangan        -> store
+    // GET    /api/ruangan/{id}   -> show
+    // PUT    /api/ruangan/{id}   -> update
+    // DELETE /api/ruangan/{id}   -> destroy
+    Route::apiResource('ruangan', RuanganController::class);
 });

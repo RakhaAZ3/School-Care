@@ -13,7 +13,7 @@
           <span>📊</span> Dashboard & Statistik
         </li>
         <li :class="{ active: activeTab === 'sarpras' }" @click="activeTab = 'sarpras'">
-          <span>📦</span> Data Sarpras
+          <span>📦</span> Manajemen Ruangan
         </li>
         <li :class="{ active: activeTab === 'kategori' }" @click="activeTab = 'kategori'">
           <span>🏷️</span> Kelola Kategori & Ruangan
