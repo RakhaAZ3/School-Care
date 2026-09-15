@@ -14,12 +14,18 @@
       </div>
       <h1>Manajemen Ruangan 🏢</h1>
       <p>Kelola daftar ruangan dan pantau skor kondisi fasilitasnya secara berkala.</p>
-      
+
       <button class="btn-primary-glow mt-4" @click="openTambahModal">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         <span>Tambah Ruangan</span>
       </button>
     </header>
+
+    <!-- Notifikasi Error Global -->
+    <div v-if="errorMessage" class="alert-error">
+      ⚠️ {{ errorMessage }}
+      <button class="alert-close" @click="errorMessage = ''">✕</button>
+    </div>
 
     <!-- Stat Cards Overview -->
     <div class="stats-grid">
@@ -50,23 +56,33 @@
     <div class="action-bar-card">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Cari nama ruangan atau lokasi..." 
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Cari nama ruangan atau lokasi..."
           class="input-search"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
       </div>
+      <button class="btn-refresh" @click="fetchRuangan" :disabled="isLoading" title="Muat ulang data">
+        <span :class="{ spinning: isLoading }">⟳</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="isLoading && ruanganList.length === 0" class="empty-state-card">
+      <div class="empty-icon">⏳</div>
+      <h3>Memuat data ruangan...</h3>
+      <p>Mohon tunggu sebentar.</p>
     </div>
 
     <!-- Grid Ruangan Bergaya Card Modern -->
-    <div class="room-grid" v-if="filteredRuangan.length > 0">
+    <div class="room-grid" v-else-if="filteredRuangan.length > 0">
       <div v-for="item in filteredRuangan" :key="item.id" class="room-card">
         <div class="room-card-top">
           <div class="room-title-group">
-            <h3>{{ item.nama }}</h3>
-            <p class="room-desc">📍 {{ item.lokasi }}</p>
+            <h3>{{ item.nama_ruangan }}</h3>
+            <p class="room-desc">📍 {{ item.gedung }} - {{ item.lantai }}</p>
           </div>
           <div class="card-action-dropdown">
             <button class="btn-icon edit" title="Edit Ruangan" @click="editRuangan(item)">
@@ -84,8 +100,8 @@
             <strong :style="{ color: getScoreColor(item.score) }">⭐ {{ item.score }}/100</strong>
           </div>
           <div class="progress-bar">
-            <div 
-              class="progress-fill" 
+            <div
+              class="progress-fill"
               :style="{ width: item.score + '%', backgroundColor: getScoreColor(item.score) }"
             ></div>
           </div>
@@ -105,28 +121,33 @@
 
     <!-- Modal Form Tambah / Edit Ruangan -->
     <Transition name="fade">
-      <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
+      <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
         <div class="modal-container">
           <div class="modal-header">
             <div>
               <h3>{{ isEditMode ? 'Edit Data Ruangan' : 'Tambah Ruangan Baru' }}</h3>
               <p>Masukkan rincian informasi ruangan sekolah.</p>
             </div>
-            <button class="close-modal-btn" @click="showModal = false">✕</button>
+            <button class="close-modal-btn" @click="closeModal">✕</button>
           </div>
 
           <form @submit.prevent="simpanRuangan">
             <div class="modal-body">
+              <div v-if="formError" class="form-error">{{ formError }}</div>
               <div class="form-grid">
                 <div class="form-group full-width">
                   <label>Nama Ruangan <span class="required">*</span></label>
-                  <input v-model="form.nama" type="text" placeholder="Misal: Lab RPL" required />
+                  <input v-model="form.nama_ruangan" type="text" placeholder="Misal: Lab RPL" required />
                 </div>
                 <div class="form-group full-width">
-                  <label>Lokasi / Keterangan <span class="required">*</span></label>
-                  <input v-model="form.lokasi" type="text" placeholder="Misal: Gedung A Lt. 2" required />
+                  <label>Gedung <span class="required">*</span></label>
+                  <input v-model="form.gedung" type="text" placeholder="Misal: Gedung A" required />
                 </div>
-                <div v-if="isEditMode" class="form-group full-width">
+                <div class="form-group full-width">
+                  <label>Lantai <span class="required">*</span></label>
+                  <input v-model="form.lantai" type="text" placeholder="Misal: Lt. 2" required />
+                </div>
+                <div class="form-group full-width">
                   <label>School Care Score (0 - 100)</label>
                   <input v-model.number="form.score" type="number" min="0" max="100" placeholder="80" required />
                 </div>
@@ -134,9 +155,9 @@
             </div>
 
             <div class="modal-footer">
-              <button type="button" class="btn-ghost" @click="showModal = false">Batal</button>
-              <button type="submit" class="btn-primary-glow">
-                {{ isEditMode ? 'Simpan Perubahan' : 'Simpan Ruangan' }}
+              <button type="button" class="btn-ghost" @click="closeModal">Batal</button>
+              <button type="submit" class="btn-primary-glow" :disabled="isSaving">
+                {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Ruangan') }}
               </button>
             </div>
           </form>
@@ -147,8 +168,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api'
 
 const router = useRouter()
 
@@ -159,23 +181,24 @@ const kembaliKeBeranda = () => {
 const showModal = ref(false)
 const isEditMode = ref(false)
 const searchQuery = ref('')
+const isLoading = ref(false)
+const isSaving = ref(false)
+const errorMessage = ref('')
+const formError = ref('')
 
-const ruanganList = ref([
-  { id: 1, nama: 'Lab RPL', lokasi: 'Gedung A Lt. 2', score: 82 },
-  { id: 2, nama: 'Lab TKJ', lokasi: 'Gedung A Lt. 2', score: 65 },
-  { id: 3, nama: 'Perpustakaan', lokasi: 'Gedung B Lt. 1', score: 90 },
-  { id: 4, nama: 'Aula Utama', lokasi: 'Gedung C Lt. 1', score: 45 },
-  { id: 5, nama: 'Ruang Guru', lokasi: 'Gedung Utama', score: 88 }
-])
+const ruanganList = ref([])
 
 const form = ref({
   id: null,
-  nama: '',
-  lokasi: '',
+  nama_ruangan: '',
+  gedung: '',
+  lantai: '',
   score: 100
 })
 
-// Statistics Computation
+// -----------------------------------------------------------------------
+// STATISTIK
+// -----------------------------------------------------------------------
 const totalRuangan = computed(() => ruanganList.value.length)
 const rataRataScore = computed(() => {
   if (ruanganList.value.length === 0) return 0
@@ -186,19 +209,22 @@ const ruanganPerluPerhatian = computed(() => {
   return ruanganList.value.filter(item => item.score < 60).length
 })
 
-// Filter Logic
+// -----------------------------------------------------------------------
+// FILTER PENCARIAN
+// -----------------------------------------------------------------------
 const filteredRuangan = computed(() => {
   return ruanganList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    return item.nama.toLowerCase().includes(q) || 
-           item.lokasi.toLowerCase().includes(q)
+    return item.nama_ruangan.toLowerCase().includes(q) ||
+           item.gedung.toLowerCase().includes(q) ||
+           (item.lantai || '').toLowerCase().includes(q)
   })
 })
 
 const getScoreColor = (score) => {
-  if (score >= 80) return '#10b981' // Hijau modern
-  if (score >= 60) return '#f59e0b' // Kuning/Amber
-  return '#ef4444' // Merah
+  if (score >= 80) return '#10b981'
+  if (score >= 60) return '#f59e0b'
+  return '#ef4444'
 }
 
 const getScoreLabel = (score) => {
@@ -207,43 +233,128 @@ const getScoreLabel = (score) => {
   return 'Perlu Perbaikan Segera'
 }
 
+// -----------------------------------------------------------------------
+// AMBIL DATA DARI BACKEND (READ)
+// GET /ruangan
+// -----------------------------------------------------------------------
+const fetchRuangan = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const res = await api.get('/ruangan')
+    // Backend membungkus data dalam key "data": { data: [...] }
+    ruanganList.value = res.data.data
+  } catch (error) {
+    if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Gagal memuat data ruangan, coba lagi.'
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// -----------------------------------------------------------------------
+// MODAL HANDLING
+// -----------------------------------------------------------------------
 const openTambahModal = () => {
   isEditMode.value = false
-  form.value = { id: null, nama: '', lokasi: '', score: 100 }
+  formError.value = ''
+  form.value = { id: null, nama_ruangan: '', gedung: '', lantai: '', score: 100 }
   showModal.value = true
 }
 
 const editRuangan = (item) => {
   isEditMode.value = true
+  formError.value = ''
   form.value = { ...item }
   showModal.value = true
 }
 
-const simpanRuangan = () => {
-  if (isEditMode.value) {
-    const idx = ruanganList.value.findIndex(i => i.id === form.value.id)
-    if (idx !== -1) {
-      ruanganList.value[idx].nama = form.value.nama
-      ruanganList.value[idx].lokasi = form.value.lokasi
-      ruanganList.value[idx].score = form.value.score
-    }
-  } else {
-    const newId = ruanganList.value.length > 0 ? Math.max(...ruanganList.value.map(i => i.id)) + 1 : 1
-    ruanganList.value.unshift({
-      id: newId,
-      nama: form.value.nama,
-      lokasi: form.value.lokasi,
-      score: 100 // Default score ruangan baru
-    })
-  }
+const closeModal = () => {
+  if (isSaving.value) return
   showModal.value = false
 }
 
-const hapusRuangan = (id) => {
-  if (confirm('Yakin ingin menghapus data ruangan ini?')) {
-    ruanganList.value = ruanganList.value.filter(item => item.id !== id)
+// -----------------------------------------------------------------------
+// SIMPAN DATA (CREATE / UPDATE)
+// POST /ruangan  ATAU  PUT /ruangan/:id
+// -----------------------------------------------------------------------
+const simpanRuangan = async () => {
+  formError.value = ''
+  isSaving.value = true
+  try {
+    if (isEditMode.value) {
+      const res = await api.put(`/ruangan/${form.value.id}`, {
+        nama_ruangan: form.value.nama_ruangan,
+        gedung: form.value.gedung,
+        lantai: form.value.lantai,
+        score: form.value.score
+      })
+      // Backend membungkus data dalam key "data": { message, data: {...} }
+      const ruanganUpdate = res.data.data
+      const idx = ruanganList.value.findIndex(i => i.id === form.value.id)
+      if (idx !== -1) {
+        ruanganList.value[idx] = ruanganUpdate
+      }
+    } else {
+      const res = await api.post('/ruangan', {
+        nama_ruangan: form.value.nama_ruangan,
+        gedung: form.value.gedung,
+        lantai: form.value.lantai,
+        score: form.value.score
+      })
+      // Backend membungkus data dalam key "data": { message, data: {...} }
+      const dataBaru = res.data.data
+      ruanganList.value.unshift(dataBaru)
+    }
+    showModal.value = false
+  } catch (error) {
+    if (error.response?.status === 422) {
+      // Error validasi dari Laravel, contoh: nama_ruangan wajib diisi
+      const errors = error.response.data.errors
+      formError.value = Object.values(errors).flat().join(' ')
+    } else if (error.request) {
+      formError.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      formError.value = 'Gagal menyimpan data, coba lagi.'
+    }
+  } finally {
+    isSaving.value = false
   }
 }
+
+// -----------------------------------------------------------------------
+// HAPUS DATA (DELETE)
+// DELETE /ruangan/:id
+// -----------------------------------------------------------------------
+const hapusRuangan = async (id) => {
+  if (!confirm('Yakin ingin menghapus data ruangan ini?')) return
+
+  const backup = [...ruanganList.value]
+  // Optimistic update: hapus dulu dari tampilan
+  ruanganList.value = ruanganList.value.filter(item => item.id !== id)
+
+  try {
+    await api.delete(`/ruangan/${id}`)
+  } catch (error) {
+    if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Gagal menghapus data di server. Data dikembalikan.'
+    }
+    // Rollback jika gagal
+    ruanganList.value = backup
+  }
+}
+
+// -----------------------------------------------------------------------
+// AMBIL DATA SAAT KOMPONEN DIMUAT
+// -----------------------------------------------------------------------
+onMounted(() => {
+  fetchRuangan()
+})
 </script>
 
 <style scoped>
@@ -355,6 +466,46 @@ const hapusRuangan = (id) => {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.btn-primary-glow:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Alert Error */
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  color: #b91c1c;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.form-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* Stat Cards Grid */
@@ -473,6 +624,34 @@ const hapusRuangan = (id) => {
   color: #94a3b8;
   cursor: pointer;
   font-size: 0.9rem;
+}
+
+.btn-refresh {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-refresh:hover { border-color: #2563eb; color: #2563eb; }
+.btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.spinning {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Room Cards Grid */

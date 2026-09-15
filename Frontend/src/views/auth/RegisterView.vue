@@ -25,6 +25,16 @@
         </div>
 
         <div class="form-group">
+          <label>No HP</label>
+          <input 
+            type="text" 
+            v-model="phone" 
+            placeholder="contoh: 081234567890" 
+            required 
+          />
+        </div>
+
+        <div class="form-group">
           <label>Email Sekolah</label>
           <input 
             type="email" 
@@ -65,6 +75,7 @@ import api from '../../utils/api'
 
 const router = useRouter()
 const name = ref('')
+const phone = ref('') 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
@@ -78,13 +89,14 @@ const handleRegister = async () => {
     const response = await api.post('/register', {
       name: name.value,
       email: email.value,
+      no_hp: phone.value,
       password: password.value,
       // Form ini cuma punya 1 field password, jadi konfirmasinya
       // disamakan otomatis (backend tetap wajib validasi "confirmed")
       password_confirmation: password.value,
     })
 
-    localStorage.setItem('access_token', response.data.access_token)
+    localStorage.setItem('token', response.data.access_token)
     localStorage.setItem('user', JSON.stringify(response.data.user))
 
     alert('Registrasi Berhasil! Silakan masuk menggunakan akun baru kamu.')
