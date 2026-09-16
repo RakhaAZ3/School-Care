@@ -14,7 +14,7 @@
       </div>
       <h1>Manajemen Fasilitas & Sarpras</h1>
       <p>Kelola data fasilitas, inventaris, dan kondisi aset sekolah secara real-time.</p>
-      
+
       <div class="header-action-btn">
         <button class="btn-primary-glow" @click="openTambahModal">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -22,6 +22,16 @@
         </button>
       </div>
     </header>
+
+    <!-- Notifikasi -->
+    <div v-if="successMessage" class="alert alert-success">
+      ✅ {{ successMessage }}
+      <button class="alert-close" @click="successMessage = ''">✕</button>
+    </div>
+    <div v-if="errorMessage" class="alert alert-error">
+      ❌ {{ errorMessage }}
+      <button class="alert-close" @click="errorMessage = ''">✕</button>
+    </div>
 
     <!-- Stats Cards Grid -->
     <div class="stats-grid">
@@ -52,10 +62,10 @@
     <div class="action-bar-card">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Cari kode atau nama fasilitas..." 
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Cari kode atau nama fasilitas..."
           class="input-search"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
@@ -64,15 +74,28 @@
       <div class="filter-box">
         <select v-model="filterKondisi" class="styled-select">
           <option value="">Semua Kondisi</option>
-          <option value="Baik">Baik</option>
-          <option value="Perlu Perbaikan">Perlu Perbaikan</option>
-          <option value="Rusak">Rusak</option>
+          <option value="baik">Baik</option>
+          <option value="rusak_ringan">Rusak Ringan</option>
+          <option value="rusak_berat">Rusak Berat</option>
         </select>
+      </div>
+
+      <button class="btn-refresh" @click="fetchFasilitas" :disabled="isLoading" title="Muat ulang data">
+        <span :class="{ spinning: isLoading }">⟳</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="isLoading && fasilitas.length === 0" class="main-card">
+      <div class="empty-state-box">
+        <div class="empty-icon">⏳</div>
+        <h3>Memuat data fasilitas...</h3>
+        <p>Mohon tunggu sebentar.</p>
       </div>
     </div>
 
     <!-- Tabel Data Fasilitas -->
-    <div class="main-card">
+    <div class="main-card" v-else>
       <div class="table-responsive">
         <table class="styled-table">
           <thead>
@@ -87,24 +110,24 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredFasilitas" :key="item.kode" class="table-row">
+            <tr v-for="item in filteredFasilitas" :key="item.id" class="table-row">
               <td>
-                <span class="code-badge">{{ item.kode }}</span>
+                <span class="code-badge">{{ item.kode_sarana }}</span>
               </td>
               <td class="font-semibold text-dark">
-                <strong>{{ item.nama }}</strong>
+                <strong>{{ item.nama_sarana }}</strong>
               </td>
               <td>
-                <span class="category-tag">{{ item.kategori }}</span>
+                <span class="category-tag">{{ item.kategori.nama_kategori ?? '-' }}</span>
               </td>
-              <td class="room-text">{{ item.ruangan }}</td>
+              <td class="room-text">{{ item.ruangan.nama_ruangan ?? '-' }}</td>
               <td class="font-medium">
                 <strong>{{ item.jumlah }}</strong> <span class="unit-text">Unit</span>
               </td>
               <td>
                 <span :class="['badge-status', getBadgeClass(item.kondisi)]">
                   <span class="badge-dot"></span>
-                  {{ item.kondisi }}
+                  {{ getKondisiLabel(item.kondisi) }}
                 </span>
               </td>
               <td>
@@ -112,7 +135,7 @@
                   <button class="btn-icon edit" title="Edit Fasilitas" @click="editBarang(item)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                   </button>
-                  <button class="btn-icon delete" title="Hapus Fasilitas" @click="hapusBarang(item.kode)">
+                  <button class="btn-icon delete" title="Hapus Fasilitas" @click="hapusBarang(item)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                   </button>
                 </div>
@@ -135,43 +158,40 @@
 
     <!-- Modal Form Tambah/Edit Fasilitas -->
     <Transition name="fade">
-      <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
+      <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
         <div class="modal-container">
           <div class="modal-header">
             <div>
               <h3>{{ isEditMode ? 'Edit Data Fasilitas' : 'Tambah Fasilitas Baru' }}</h3>
               <p>Rincian aset dan sarana prasarana sekolah.</p>
             </div>
-            <button class="close-modal-btn" @click="showModal = false">✕</button>
+            <button class="close-modal-btn" @click="closeModal">✕</button>
           </div>
 
           <form @submit.prevent="simpanBarang">
             <div class="modal-body">
+              <div v-if="formError" class="form-error">{{ formError }}</div>
               <div class="form-grid">
                 <div class="form-group">
-                  <label>Kode Barang <span class="required">*</span></label>
-                  <input v-model="form.kode" type="text" placeholder="MIS: INF-001" :disabled="isEditMode" required />
-                </div>
-                <div class="form-group">
                   <label>Nama Barang <span class="required">*</span></label>
-                  <input v-model="form.nama" type="text" placeholder="Nama fasilitas" required />
+                  <input v-model="form.nama_sarana" type="text" placeholder="Nama fasilitas" required />
                 </div>
                 <div class="form-group">
                   <label>Kategori <span class="required">*</span></label>
-                  <select v-model="form.kategori" class="styled-select-input" required>
-                    <option value="Elektronik">Elektronik</option>
-                    <option value="Furniture">Furniture</option>
-                    <option value="Olahraga">Olahraga</option>
+                  <select v-model="form.kategori_id" class="styled-select-input" required>
+                    <option value="" disabled>-- Pilih Kategori --</option>
+                    <option v-for="kategori in kategoriOptions" :key="kategori.id" :value="kategori.id">
+                      {{ kategori.nama_kategori }}
+                    </option>
                   </select>
                 </div>
                 <div class="form-group">
                   <label>Ruangan <span class="required">*</span></label>
-                  <select v-model="form.ruangan" class="styled-select-input" required>
-                    <option value="Lab RPL">Lab RPL</option>
-                    <option value="Ruang X RPL">Ruang X RPL</option>
-                    <option value="Lab TKJ">Lab TKJ</option>
-                    <option value="Perpustakaan">Perpustakaan</option>
-                    <option value="Aula">Aula</option>
+                  <select v-model="form.ruangan_id" class="styled-select-input" required>
+                    <option value="" disabled>-- Pilih Ruangan --</option>
+                    <option v-for="ruangan in ruanganOptions" :key="ruangan.id" :value="ruangan.id">
+                      {{ ruangan.nama_ruangan }}
+                    </option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -181,18 +201,18 @@
                 <div class="form-group">
                   <label>Kondisi <span class="required">*</span></label>
                   <select v-model="form.kondisi" class="styled-select-input" required>
-                    <option value="Baik">Baik</option>
-                    <option value="Perlu Perbaikan">Perlu Perbaikan</option>
-                    <option value="Rusak">Rusak</option>
+                    <option value="baik">Baik</option>
+                    <option value="rusak_ringan">Rusak Ringan</option>
+                    <option value="rusak_berat">Rusak Berat</option>
                   </select>
                 </div>
               </div>
             </div>
 
             <div class="modal-footer">
-              <button type="button" class="btn-ghost" @click="showModal = false">Batal</button>
-              <button type="submit" class="btn-primary-glow">
-                {{ isEditMode ? 'Simpan Perubahan' : 'Simpan Data' }}
+              <button type="button" class="btn-ghost" @click="closeModal">Batal</button>
+              <button type="submit" class="btn-primary-glow" :disabled="isSaving">
+                {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Data') }}
               </button>
             </div>
           </form>
@@ -203,8 +223,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api'
 
 const router = useRouter()
 
@@ -217,78 +238,214 @@ const isEditMode = ref(false)
 const searchQuery = ref('')
 const filterKondisi = ref('')
 
-const fasilitas = ref([
-  { kode: 'INF-001', nama: 'Proyektor Epson', kategori: 'Elektronik', ruangan: 'Lab RPL', jumlah: 2, kondisi: 'Baik' },
-  { kode: 'FUR-012', nama: 'Kursi Siswa', kategori: 'Furniture', ruangan: 'Ruang X RPL', jumlah: 36, kondisi: 'Baik' },
-  { kode: 'INF-005', nama: 'AC Split 2PK', kategori: 'Elektronik', ruangan: 'Lab TKJ', jumlah: 1, kondisi: 'Perlu Perbaikan' },
-  { kode: 'OLG-002', nama: 'Meja Tenis Meja', kategori: 'Olahraga', ruangan: 'Aula', jumlah: 1, kondisi: 'Rusak' }
-])
+const isLoading = ref(false)
+const isSaving = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
+const formError = ref('')
+
+const fasilitas = ref([])
+const kategoriOptions = ref([])
+const ruanganOptions = ref([])
 
 const form = ref({
-  kode: '',
-  nama: '',
-  kategori: 'Elektronik',
-  ruangan: 'Lab RPL',
+  id: null,
+  nama_sarana: '',
+  kategori_id: '',
+  ruangan_id: '',
   jumlah: 1,
-  kondisi: 'Baik'
+  kondisi: 'baik'
 })
 
-// Ringkasan Statistik
-const totalUnit = computed(() => fasilitas.value.reduce((acc, curr) => acc + Number(curr.jumlah), 0))
+// -----------------------------------------------------------------------
+// AMBIL DATA AWAL (kategori & ruangan untuk dropdown, lalu daftar fasilitas)
+// -----------------------------------------------------------------------
+onMounted(async () => {
+  await Promise.all([fetchOptions(), fetchFasilitas()])
+})
+
+const fetchOptions = async () => {
+  try {
+    const [kategoriRes, ruanganRes] = await Promise.all([
+      api.get('/kategori'),
+      api.get('/ruangan'),
+    ])
+    // Sesuaikan kalau backend membungkus data dengan struktur berbeda
+    kategoriOptions.value = kategoriRes.data.data || kategoriRes.data
+    ruanganOptions.value = ruanganRes.data.data || ruanganRes.data
+  } catch (error) {
+    errorMessage.value = 'Gagal memuat data kategori/ruangan.'
+    console.error(error)
+  }
+}
+
+// -----------------------------------------------------------------------
+// AMBIL DATA FASILITAS (READ)
+// GET /sarana
+// -----------------------------------------------------------------------
+const fetchFasilitas = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const res = await api.get('/sarana')
+    fasilitas.value = res.data.data || res.data
+  } catch (error) {
+    if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Gagal memuat data fasilitas, coba lagi.'
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// -----------------------------------------------------------------------
+// STATISTIK
+// -----------------------------------------------------------------------
+const totalUnit = computed(() => fasilitas.value.reduce((acc, curr) => acc + Number(curr.jumlah || 0), 0))
 const totalKondisiBaik = computed(() => {
   return fasilitas.value
-    .filter(item => item.kondisi === 'Baik')
-    .reduce((acc, curr) => acc + Number(curr.jumlah), 0)
+    .filter(item => item.kondisi === 'baik')
+    .reduce((acc, curr) => acc + Number(curr.jumlah || 0), 0)
 })
 const totalPerluPerhatian = computed(() => {
   return fasilitas.value
-    .filter(item => item.kondisi !== 'Baik')
-    .reduce((acc, curr) => acc + Number(curr.jumlah), 0)
+    .filter(item => item.kondisi !== 'baik')
+    .reduce((acc, curr) => acc + Number(curr.jumlah || 0), 0)
 })
 
-// Filter & Pencarian
+// -----------------------------------------------------------------------
+// FILTER & PENCARIAN
+// -----------------------------------------------------------------------
 const filteredFasilitas = computed(() => {
   return fasilitas.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    const matchSearch = item.nama.toLowerCase().includes(q) || item.kode.toLowerCase().includes(q)
+    const matchSearch =
+      (item.nama_sarana || '').toLowerCase().includes(q) ||
+      (item.kode_sarana || '').toLowerCase().includes(q)
     const matchKondisi = filterKondisi.value === '' || item.kondisi === filterKondisi.value
     return matchSearch && matchKondisi
   })
 })
 
 const getBadgeClass = (kondisi) => {
-  if (kondisi === 'Baik') return 'badge-success'
-  if (kondisi === 'Perlu Perbaikan') return 'badge-warning'
+  if (kondisi === 'baik') return 'badge-success'
+  if (kondisi === 'rusak_ringan') return 'badge-warning'
   return 'badge-danger'
 }
 
+const getKondisiLabel = (kondisi) => {
+  if (kondisi === 'baik') return 'Baik'
+  if (kondisi === 'rusak_ringan') return 'Rusak Ringan'
+  if (kondisi === 'rusak_berat') return 'Rusak Berat'
+  return kondisi ?? '-'
+}
+
+// -----------------------------------------------------------------------
+// MODAL HANDLING
+// -----------------------------------------------------------------------
 const openTambahModal = () => {
   isEditMode.value = false
-  form.value = { kode: '', nama: '', kategori: 'Elektronik', ruangan: 'Lab RPL', jumlah: 1, kondisi: 'Baik' }
+  formError.value = ''
+  form.value = {
+    id: null,
+    nama_sarana: '',
+    kategori_id: '',
+    ruangan_id: '',
+    jumlah: 1,
+    kondisi: 'baik'
+  }
   showModal.value = true
 }
 
 const editBarang = (item) => {
   isEditMode.value = true
-  form.value = { ...item }
+  formError.value = ''
+  form.value = {
+    id: item.id,
+    nama_sarana: item.nama_sarana,
+    // Ambil id dari relasi kalau backend mengirim objek kategori/ruangan bersarang,
+    // fallback ke kategori_id/ruangan_id langsung kalau memang sudah flat.
+    kategori_id: item.kategori?.id ?? item.kategori_id,
+    ruangan_id: item.ruangan?.id ?? item.ruangan_id,
+    jumlah: item.jumlah,
+    kondisi: item.kondisi
+  }
   showModal.value = true
 }
 
-const simpanBarang = () => {
-  if (isEditMode.value) {
-    const idx = fasilitas.value.findIndex(i => i.kode === form.value.kode)
-    if (idx !== -1) {
-      fasilitas.value[idx] = { ...form.value }
-    }
-  } else {
-    fasilitas.value.unshift({ ...form.value })
-  }
+const closeModal = () => {
+  if (isSaving.value) return
   showModal.value = false
 }
 
-const hapusBarang = (kode) => {
-  if (confirm(`Yakin ingin menghapus item fasilitas dengan kode ${kode}?`)) {
-    fasilitas.value = fasilitas.value.filter(item => item.kode !== kode)
+// -----------------------------------------------------------------------
+// SIMPAN DATA (CREATE / UPDATE)
+// POST /sarana  ATAU  PUT /sarana/:id
+// -----------------------------------------------------------------------
+const simpanBarang = async () => {
+  formError.value = ''
+  isSaving.value = true
+
+  const payload = {
+    nama_sarana: form.value.nama_sarana,
+    kategori_id: form.value.kategori_id,
+    ruangan_id: form.value.ruangan_id,
+    jumlah: form.value.jumlah,
+    kondisi: form.value.kondisi
+  }
+
+  try {
+    if (isEditMode.value) {
+      const res = await api.put(`/sarana/${form.value.id}`, payload)
+      const dataUpdate = res.data.data || res.data
+      const idx = fasilitas.value.findIndex(i => i.id === form.value.id)
+      if (idx !== -1) {
+        fasilitas.value[idx] = dataUpdate
+      }
+      successMessage.value = 'Fasilitas berhasil diperbarui.'
+    } else {
+      const res = await api.post('/sarana', payload)
+      const dataBaru = res.data.data || res.data
+      fasilitas.value.unshift(dataBaru)
+      successMessage.value = 'Fasilitas berhasil ditambahkan.'
+    }
+    showModal.value = false
+  } catch (error) {
+    if (error.response?.status === 422) {
+      const errors = error.response.data.errors
+      formError.value = Object.values(errors).flat().join(' ')
+    } else if (error.request) {
+      formError.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      formError.value = error.response?.data?.message || 'Gagal menyimpan data, coba lagi.'
+    }
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// -----------------------------------------------------------------------
+// HAPUS DATA (DELETE)
+// DELETE /sarana/:id
+// -----------------------------------------------------------------------
+const hapusBarang = async (item) => {
+  if (!confirm(`Yakin ingin menghapus item fasilitas dengan kode ${item.kode_sarana}?`)) return
+
+  const backup = [...fasilitas.value]
+  fasilitas.value = fasilitas.value.filter(i => i.id !== item.id)
+
+  try {
+    await api.delete(`/sarana/${item.id}`)
+    successMessage.value = 'Fasilitas berhasil dihapus.'
+  } catch (error) {
+    if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = error.response?.data?.message || 'Gagal menghapus data di server. Data dikembalikan.'
+    }
+    fasilitas.value = backup
   }
 }
 </script>
@@ -402,6 +559,55 @@ const hapusBarang = (kode) => {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.btn-primary-glow:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Alerts */
+.alert {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.form-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* Stat Cards Grid */
@@ -536,6 +742,34 @@ const hapusBarang = (kode) => {
 .styled-select:focus, .styled-select-input:focus {
   background: white;
   border-color: #2563eb;
+}
+
+.btn-refresh {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-refresh:hover { border-color: #2563eb; color: #2563eb; }
+.btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.spinning {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Table Styling */
@@ -759,6 +993,12 @@ const hapusBarang = (kode) => {
 .form-group input:focus, .form-group select:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-group input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .modal-footer {

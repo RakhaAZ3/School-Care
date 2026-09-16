@@ -152,7 +152,7 @@
                 </div>
                 <div class="form-group full-width">
                   <label>Jenis Perawatan <span class="required">*</span></label>
-                  <input v-model="form.jenis" type="text" placeholder="Misal: Pembersihan lensa & filter" required />
+                  <input v-model="form.jenis_pemeliharaan" type="text" placeholder="Misal: Pembersihan lensa & filter" required />
                 </div>
                 <div class="form-group">
                   <label>Teknisi / Vendor <span class="required">*</span></label>
@@ -164,7 +164,7 @@
                 </div>
                 <div class="form-group">
                   <label>Tanggal Pemeliharaan <span class="required">*</span></label>
-                  <input v-model="form.tanggal" type="date" required />
+                  <input v-model="form.tanggal_pemeliharaan" type="date" required />
                 </div>
                 <div class="form-group">
                   <label>Pemeriksaan Berikutnya <span class="required">*</span></label>
@@ -201,20 +201,20 @@ const maintenanceList = ref([
   {
     id: 1,
     fasilitas: 'Proyektor Lab RPL',
-    jenis: 'Pembersihan Lensa',
+    jenis_pemeliharaan: 'Pembersihan Lensa',
     teknisi: 'Ahmad (Internal)',
     biaya: 50000,
-    tanggal: '2026-09-02',
+    tanggal_pemeliharaan : '2026-09-02',
     pemeriksaanBerikutnya: '2026-10-10',
     status: 'Selesai'
   },
   {
     id: 2,
     fasilitas: 'AC Lab TKJ',
-    jenis: 'Cuci AC & Isi Freon',
+    jenis_pemeliharaan: 'Cuci AC & Isi Freon',
     teknisi: 'CV Bintang Service',
     biaya: 150000,
-    tanggal: '2026-08-15',
+    tanggal_pemeliharaan : '2026-08-15',
     pemeriksaanBerikutnya: '2026-09-05',
     status: 'Selesai'
   }
@@ -222,10 +222,10 @@ const maintenanceList = ref([
 
 const form = ref({
   fasilitas: '',
-  jenis: '',
+  jenis_pemeliharaan: '',
   teknisi: '',
   biaya: 0,
-  tanggal: '',
+  tanggal_pemeliharaan : '',
   pemeriksaanBerikutnya: '',
   status: 'Selesai'
 })
@@ -250,13 +250,13 @@ const filteredMaintenance = computed(() => {
   return maintenanceList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
     return item.fasilitas.toLowerCase().includes(q) || 
-           item.jenis.toLowerCase().includes(q) ||
+           item.jenis_pemeliharaan.toLowerCase().includes(q) ||
            item.teknisi.toLowerCase().includes(q)
   })
 })
 
 const openTambahModal = () => {
-  form.value = { fasilitas: '', jenis: '', teknisi: '', biaya: 0, tanggal: '', pemeriksaanBerikutnya: '', status: 'Selesai' }
+  form.value = { fasilitas: '', jenis_pemeliharaan: '', teknisi: '', biaya: 0, tanggal_pemeliharaan : '', pemeriksaanBerikutnya: '', status: 'Selesai' }
   showModal.value = true
 }
 

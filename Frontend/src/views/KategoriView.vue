@@ -14,7 +14,7 @@
       </div>
       <h1>Manajemen Kategori</h1>
       <p>Kelola dan kelompokkan jenis fasilitas serta aset sekolah secara terstruktur.</p>
-      
+
       <div class="header-action-btn">
         <button class="btn-primary-glow" @click="openTambahModal">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -22,6 +22,12 @@
         </button>
       </div>
     </header>
+
+    <!-- Notifikasi Error Global -->
+    <div v-if="errorMessage" class="alert-error">
+      ⚠️ {{ errorMessage }}
+      <button class="alert-close" @click="errorMessage = ''">✕</button>
+    </div>
 
     <!-- Stats Cards Grid -->
     <div class="stats-grid">
@@ -52,18 +58,30 @@
     <div class="action-bar-card">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Cari kode atau nama kategori..." 
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Cari kode atau nama kategori..."
           class="input-search"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
       </div>
+      <button class="btn-refresh" @click="fetchKategori" :disabled="isLoading" title="Muat ulang data">
+        <span :class="{ spinning: isLoading }">⟳</span>
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="isLoading && kategoriList.length === 0" class="main-card">
+      <div class="empty-state-box">
+        <div class="empty-icon">⏳</div>
+        <h3>Memuat data kategori...</h3>
+        <p>Mohon tunggu sebentar.</p>
+      </div>
     </div>
 
     <!-- Tabel Data Kategori -->
-    <div class="main-card">
+    <div class="main-card" v-else>
       <div class="table-responsive">
         <table class="styled-table">
           <thead>
@@ -76,25 +94,25 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredKategori" :key="item.kode" class="table-row">
+            <tr v-for="item in filteredKategori" :key="item.id" class="table-row">
               <td>
                 <span class="code-badge">{{ item.kode }}</span>
               </td>
               <td class="font-semibold text-dark">
-                <strong>{{ item.nama }}</strong>
+                <strong>{{ item.nama_kategori }}</strong>
               </td>
               <td class="description-text">
-                {{ item.deskripsi }}
+                {{ item.keterangan }}
               </td>
               <td class="font-medium">
-                <strong>{{ item.jumlahItem }}</strong> <span class="unit-text">Unit</span>
+                <strong>{{ item.jumlah_item ?? 0 }}</strong> <span class="unit-text">Unit</span>
               </td>
               <td>
                 <div class="action-buttons">
                   <button class="btn-icon edit" title="Edit Kategori" @click="editKategori(item)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                   </button>
-                  <button class="btn-icon delete" title="Hapus Kategori" @click="hapusKategori(item.kode)">
+                  <button class="btn-icon delete" title="Hapus Kategori" @click="hapusKategori(item)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                   </button>
                 </div>
@@ -117,50 +135,54 @@
 
     <!-- Modal Form Tambah/Edit Kategori -->
     <Transition name="fade">
-      <div v-if="showModal" class="modal-backdrop" @click.self="showModal = false">
+      <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
         <div class="modal-container">
           <div class="modal-header">
             <div>
               <h3>{{ isEditMode ? 'Edit Data Kategori' : 'Tambah Kategori Baru' }}</h3>
               <p>Isi rincian kategori untuk pengelompokkan barang.</p>
             </div>
-            <button class="close-modal-btn" @click="showModal = false">✕</button>
+            <button class="close-modal-btn" @click="closeModal">✕</button>
           </div>
 
           <form @submit.prevent="simpanKategori">
             <div class="modal-body">
+              <div v-if="formError" class="form-error">{{ formError }}</div>
               <div class="form-grid">
-                <div class="form-group full-width">
-                  <label>Kode Kategori <span class="required">*</span></label>
-                  <input v-model="form.kode" type="text" placeholder="MIS: KTG-001" :disabled="isEditMode" required />
+                <div v-if="isEditMode" class="form-group full-width">
+                  <label>Kode Kategori</label>
+                  <input :value="form.kode" type="text" disabled />
+                  <span class="field-hint">Kode dibuat otomatis oleh sistem dan tidak bisa diubah.</span>
                 </div>
                 <div class="form-group full-width">
                   <label>Nama Kategori <span class="required">*</span></label>
-                  <input v-model="form.nama" type="text" placeholder="Misal: Elektronik" required />
+                  <input v-model="form.nama_kategori" type="text" placeholder="Misal: Elektronik" required />
                 </div>
                 <div class="form-group full-width">
-                  <label>Deskripsi <span class="required">*</span></label>
-                  <textarea v-model="form.deskripsi" rows="3" placeholder="Keterangan singkat kategori..." required></textarea>
+                  <label>Keterangan</label>
+                  <textarea v-model="form.keterangan" rows="3" placeholder="Keterangan singkat kategori..."></textarea>
                 </div>
               </div>
             </div>
 
             <div class="modal-footer">
-              <button type="button" class="btn-ghost" @click="showModal = false">Batal</button>
-              <button type="submit" class="btn-primary-glow">
-                {{ isEditMode ? 'Simpan Perubahan' : 'Simpan Kategori' }}
+              <button type="button" class="btn-ghost" @click="closeModal">Batal</button>
+              <button type="submit" class="btn-primary-glow" :disabled="isSaving">
+                {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Kategori') }}
               </button>
             </div>
           </form>
         </div>
       </div>
+
     </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api'
 
 const router = useRouter()
 
@@ -171,73 +193,162 @@ const kembaliKeBeranda = () => {
 const showModal = ref(false)
 const isEditMode = ref(false)
 const searchQuery = ref('')
+const isLoading = ref(false)
+const isSaving = ref(false)
+const errorMessage = ref('')
+const formError = ref('')
 
-const kategoriList = ref([
-  { kode: 'KTG-001', nama: 'Elektronik', deskripsi: 'Perangkat elektronik, komputer, proyektor, dan aksesorisnya', jumlahItem: 24 },
-  { kode: 'KTG-002', nama: 'Furniture', deskripsi: 'Meja, kursi, lemari, papan tulis, dan perabotan kelas', jumlahItem: 120 },
-  { kode: 'KTG-003', nama: 'Peralatan Laboratorium', deskripsi: 'Alat penunjang lab sains, praktikum, dan kimia', jumlahItem: 45 },
-  { kode: 'KTG-004', nama: 'Olahraga', deskripsi: 'Peralatan kegiatan olahraga seperti bola, raket, dan meja tenis', jumlahItem: 18 },
-  { kode: 'KTG-005', nama: 'Perpustakaan', deskripsi: 'Buku, rak baca, dan fasilitas pendukung ruang baca', jumlahItem: 85 }
-])
+const kategoriList = ref([])
 
 const form = ref({
+  id: null,
   kode: '',
-  nama: '',
-  deskripsi: ''
+  nama_kategori: '',
+  keterangan: ''
 })
 
-// Statistics Computation
+// -----------------------------------------------------------------------
+// STATISTIK
+// -----------------------------------------------------------------------
 const totalKategori = computed(() => kategoriList.value.length)
-const totalItemTerhubung = computed(() => kategoriList.value.reduce((acc, curr) => acc + curr.jumlahItem, 0))
+const totalItemTerhubung = computed(() => kategoriList.value.reduce((acc, curr) => acc + (curr.jumlah_item ?? 0), 0))
 const kategoriTerbanyak = computed(() => {
   if (kategoriList.value.length === 0) return '-'
-  const sorted = [...kategoriList.value].sort((a, b) => b.jumlahItem - a.jumlahItem)
-  return sorted[0].nama
+  const sorted = [...kategoriList.value].sort((a, b) => (b.jumlah_item ?? 0) - (a.jumlah_item ?? 0))
+  return sorted[0].nama_kategori
 })
 
-// Filter Logic
+// -----------------------------------------------------------------------
+// FILTER PENCARIAN
+// -----------------------------------------------------------------------
 const filteredKategori = computed(() => {
   return kategoriList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    return item.nama.toLowerCase().includes(q) || 
+    return item.nama_kategori.toLowerCase().includes(q) ||
            item.kode.toLowerCase().includes(q) ||
-           item.deskripsi.toLowerCase().includes(q)
+           (item.keterangan || '').toLowerCase().includes(q)
   })
 })
 
+// -----------------------------------------------------------------------
+// AMBIL DATA DARI BACKEND (READ)
+// GET /kategori
+// -----------------------------------------------------------------------
+const fetchKategori = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const res = await api.get('/kategori')
+    // Backend membungkus data dalam key "data": { data: [...] }
+    kategoriList.value = res.data.data
+  } catch (error) {
+    if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Gagal memuat data kategori, coba lagi.'
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// -----------------------------------------------------------------------
+// MODAL HANDLING
+// -----------------------------------------------------------------------
 const openTambahModal = () => {
   isEditMode.value = false
-  form.value = { kode: '', nama: '', deskripsi: '' }
+  formError.value = ''
+  form.value = { id: null, kode: '', nama_kategori: '', keterangan: '' }
   showModal.value = true
 }
 
 const editKategori = (item) => {
   isEditMode.value = true
+  formError.value = ''
   form.value = { ...item }
   showModal.value = true
 }
 
-const simpanKategori = () => {
-  if (isEditMode.value) {
-    const idx = kategoriList.value.findIndex(i => i.kode === form.value.kode)
-    if (idx !== -1) {
-      kategoriList.value[idx].nama = form.value.nama
-      kategoriList.value[idx].deskripsi = form.value.deskripsi
-    }
-  } else {
-    kategoriList.value.unshift({ 
-      ...form.value, 
-      jumlahItem: 0 
-    })
-  }
+const closeModal = () => {
+  if (isSaving.value) return
   showModal.value = false
 }
 
-const hapusKategori = (kode) => {
-  if (confirm(`Yakin ingin menghapus kategori dengan kode ${kode}?`)) {
-    kategoriList.value = kategoriList.value.filter(item => item.kode !== kode)
+// -----------------------------------------------------------------------
+// SIMPAN DATA (CREATE / UPDATE)
+// POST /kategori  ATAU  PUT /kategori/:id
+// -----------------------------------------------------------------------
+const simpanKategori = async () => {
+  formError.value = ''
+  isSaving.value = true
+  try {
+    if (isEditMode.value) {
+      const res = await api.put(`/kategori/${form.value.id}`, {
+        nama_kategori: form.value.nama_kategori,
+        keterangan: form.value.keterangan
+      })
+      // Backend membungkus data dalam key "data": { message, data: {...} }
+      const kategoriUpdate = res.data.data
+      const idx = kategoriList.value.findIndex(i => i.id === form.value.id)
+      if (idx !== -1) {
+        kategoriList.value[idx] = kategoriUpdate
+      }
+    } else {
+      // "kode" dan "jumlah_item" tidak dikirim — dibuat otomatis oleh backend
+      const res = await api.post('/kategori', {
+        nama_kategori: form.value.nama_kategori,
+        keterangan: form.value.keterangan
+      })
+      // Backend membungkus data dalam key "data": { message, data: {...} }
+      const dataBaru = res.data.data
+      kategoriList.value.unshift(dataBaru)
+    }
+    showModal.value = false
+  } catch (error) {
+    if (error.response?.status === 422) {
+      // Error validasi dari Laravel, contoh: nama_kategori sudah dipakai
+      const errors = error.response.data.errors
+      formError.value = Object.values(errors).flat().join(' ')
+    } else if (error.request) {
+      formError.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      formError.value = 'Gagal menyimpan data, coba lagi.'
+    }
+  } finally {
+    isSaving.value = false
   }
 }
+
+// -----------------------------------------------------------------------
+// HAPUS DATA (DELETE)
+// DELETE /kategori/:id
+// -----------------------------------------------------------------------
+const hapusKategori = async (item) => {
+  if (!confirm(`Yakin ingin menghapus kategori dengan kode ${item.kode}?`)) return
+
+  const backup = [...kategoriList.value]
+  // Optimistic update: hapus dulu dari tampilan
+  kategoriList.value = kategoriList.value.filter(i => i.id !== item.id)
+
+  try {
+    await api.delete(`/kategori/${item.id}`)
+  } catch (error) {
+    if (error.request) {
+      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+    } else {
+      errorMessage.value = 'Gagal menghapus data di server. Data dikembalikan.'
+    }
+    // Rollback jika gagal
+    kategoriList.value = backup
+  }
+}
+
+// -----------------------------------------------------------------------
+// AMBIL DATA SAAT KOMPONEN DIMUAT
+// -----------------------------------------------------------------------
+onMounted(() => {
+  fetchKategori()
+})
 </script>
 
 <style scoped>
@@ -349,6 +460,46 @@ const hapusKategori = (kode) => {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.btn-primary-glow:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Alert Error */
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  color: #b91c1c;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.form-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* Stat Cards Grid */
@@ -467,6 +618,34 @@ const hapusKategori = (kode) => {
   color: #94a3b8;
   cursor: pointer;
   font-size: 0.9rem;
+}
+
+.btn-refresh {
+  background: white;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-refresh:hover { border-color: #2563eb; color: #2563eb; }
+.btn-refresh:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.spinning {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* Table Styling */
@@ -655,6 +834,12 @@ const hapusKategori = (kode) => {
 .form-group input:focus, .form-group textarea:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-group input:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .modal-footer {
