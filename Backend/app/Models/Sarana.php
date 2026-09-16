@@ -38,41 +38,55 @@ class Sarana extends Model
         ];
     }
 
-    /**
-     * Relasi: Sarana termasuk dalam satu Kategori
-     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // Saat sarana baru dibuat -> tambah jumlah_item di kategorinya
+        static::created(function (Sarana $sarana) {
+            $sarana->kategori()->increment('jumlah_item');
+        });
+
+        // Saat sarana dihapus (soft delete) -> kurangi jumlah_item di kategorinya
+        static::deleted(function (Sarana $sarana) {
+            $sarana->kategori()->decrement('jumlah_item');
+        });
+
+        // Saat sarana di-restore dari soft delete -> tambah lagi jumlah_item-nya
+        static::restored(function (Sarana $sarana) {
+            $sarana->kategori()->increment('jumlah_item');
+        });
+
+        // Kalau kategori_id-nya diubah (pindah kategori) -> update kedua kategori terkait
+        static::updated(function (Sarana $sarana) {
+            if ($sarana->isDirty('kategori_id')) {
+                $kategoriLama = $sarana->getOriginal('kategori_id');
+                KategoriSarana::where('id', $kategoriLama)->decrement('jumlah_item');
+                $sarana->kategori()->increment('jumlah_item');
+            }
+        });
+    }
+
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(KategoriSarana::class, 'kategori_id');
     }
 
-    /**
-     * Relasi: Sarana berada di satu Ruangan
-     */
     public function ruangan(): BelongsTo
     {
         return $this->belongsTo(Ruangan::class, 'ruangan_id');
     }
 
-    /**
-     * Relasi: Sarana punya banyak riwayat Peminjaman
-     */
     public function peminjaman(): HasMany
     {
         return $this->hasMany(Peminjaman::class, 'sarana_id');
     }
 
-    /**
-     * Relasi: Sarana punya banyak riwayat Pemeliharaan
-     */
     public function pemeliharaan(): HasMany
     {
         return $this->hasMany(Pemeliharaan::class, 'sarana_id');
     }
 
-    /**
-     * Relasi: Sarana punya banyak Laporan Kerusakan
-     */
     public function laporanKerusakan(): HasMany
     {
         return $this->hasMany(LaporanKerusakan::class, 'sarana_id');

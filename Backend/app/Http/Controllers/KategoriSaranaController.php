@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Validator;
 
 class KategoriSaranaController extends Controller
 {
-    /**
-     * Tampilkan semua data kategori sarana.
-     */
     public function index(): JsonResponse
     {
         $kategori = KategoriSarana::latest()->get();
@@ -21,11 +18,10 @@ class KategoriSaranaController extends Controller
         ]);
     }
 
-    /**
-     * Simpan data kategori sarana baru.
-     */
     public function store(Request $request): JsonResponse
     {
+        // "kode" dan "jumlah_item" TIDAK divalidasi/diminta dari request,
+        // karena keduanya otomatis diisi oleh model (lihat KategoriSarana::boot()).
         $validator = Validator::make($request->all(), [
             'nama_kategori' => ['required', 'string', 'max:255', 'unique:kategori_sarana,nama_kategori'],
             'keterangan' => ['nullable', 'string'],
@@ -46,9 +42,6 @@ class KategoriSaranaController extends Controller
         ], 201);
     }
 
-    /**
-     * Tampilkan detail satu kategori sarana beserta sarana di dalamnya.
-     */
     public function show(KategoriSarana $kategoriSarana): JsonResponse
     {
         return response()->json([
@@ -56,9 +49,6 @@ class KategoriSaranaController extends Controller
         ]);
     }
 
-    /**
-     * Update data kategori sarana.
-     */
     public function update(Request $request, KategoriSarana $kategoriSarana): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -84,11 +74,6 @@ class KategoriSaranaController extends Controller
         ]);
     }
 
-    /**
-     * Hapus data kategori sarana.
-     * Catatan: akan gagal kalau kategori ini masih dipakai oleh data sarana
-     * (karena foreign key kategori_id di tabel sarana tidak nullable).
-     */
     public function destroy(KategoriSarana $kategoriSarana): JsonResponse
     {
         if ($kategoriSarana->sarana()->exists()) {

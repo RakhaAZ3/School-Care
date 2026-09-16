@@ -15,7 +15,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
 
     // CRUD Kategori Sarana
-    Route::apiResource('kategori-sarana', KategoriSaranaController::class);
+    Route::apiResource('kategori', KategoriSaranaController::class);
 
     // CRUD Ruangan
     // GET    /api/ruangan        -> index
