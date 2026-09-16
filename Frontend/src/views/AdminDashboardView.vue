@@ -38,6 +38,7 @@
         <span class="online-dot"></span>
       </div>
 
+
       <!-- Navigation -->
       <nav class="sidebar-nav">
 
@@ -54,6 +55,27 @@
           <i class="fas fa-chart-pie"></i>
           <span v-if="!isCollapsed">Dashboard</span>
         </a>
+
+      <ul class="sidebar-menu">
+        <li :class="{ active: activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">
+          <span>📊</span> Dashboard & Statistik
+        </li>
+        <li :class="{ active: activeTab === 'sarpras' }" @click="activeTab = 'sarpras'">
+          <span>📦</span> Manajemen Ruangan
+        </li>
+        <li :class="{ active: activeTab === 'kategori' }" @click="activeTab = 'kategori'">
+          <span>🏷️</span> Kelola Kategori & Ruangan
+        </li>
+        <li :class="{ active: activeTab === 'peminjaman' }" @click="activeTab = 'peminjaman'">
+          <span>📋</span> Kelola Peminjaman
+        </li>
+        <li :class="{ active: activeTab === 'laporan' }" @click="activeTab = 'laporan'">
+          <span>🚨</span> Laporan Kerusakan
+        </li>
+        <li :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'">
+          <span>👥</span> Kelola Akun Pengguna
+        </li>
+      </ul>
 
         <div class="nav-section" v-if="!isCollapsed">
           DATA SARANA
