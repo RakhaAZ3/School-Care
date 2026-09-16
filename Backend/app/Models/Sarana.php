@@ -14,26 +14,19 @@ class Sarana extends Model
 
     protected $table = 'sarana';
 
+    // "kode_sarana" sengaja TIDAK dimasukkan ke fillable,
+    // karena diisi otomatis oleh sistem (lihat boot() di bawah).
     protected $fillable = [
-        'kode_sarana',
         'nama_sarana',
         'kategori_id',
         'ruangan_id',
         'jumlah',
         'kondisi',
-        'status',
-        'tahun_pengadaan',
-        'sumber_dana',
-        'harga',
-        'foto',
-        'keterangan',
     ];
 
     protected function casts(): array
     {
         return [
-            'harga' => 'decimal:2',
-            'tahun_pengadaan' => 'integer',
             'jumlah' => 'integer',
         ];
     }
@@ -42,22 +35,25 @@ class Sarana extends Model
     {
         parent::boot();
 
-        // Saat sarana baru dibuat -> tambah jumlah_item di kategorinya
+        // Auto generate kode_sarana setiap kali sarana baru dibuat
+        // Format: SR-0001, SR-0002, dst.
+        static::creating(function (Sarana $sarana) {
+            $lastId = (self::withTrashed()->max('id') ?? 0) + 1;
+            $sarana->kode_sarana = 'SR-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+        });
+
         static::created(function (Sarana $sarana) {
             $sarana->kategori()->increment('jumlah_item');
         });
 
-        // Saat sarana dihapus (soft delete) -> kurangi jumlah_item di kategorinya
         static::deleted(function (Sarana $sarana) {
             $sarana->kategori()->decrement('jumlah_item');
         });
 
-        // Saat sarana di-restore dari soft delete -> tambah lagi jumlah_item-nya
         static::restored(function (Sarana $sarana) {
             $sarana->kategori()->increment('jumlah_item');
         });
 
-        // Kalau kategori_id-nya diubah (pindah kategori) -> update kedua kategori terkait
         static::updated(function (Sarana $sarana) {
             if ($sarana->isDirty('kategori_id')) {
                 $kategoriLama = $sarana->getOriginal('kategori_id');

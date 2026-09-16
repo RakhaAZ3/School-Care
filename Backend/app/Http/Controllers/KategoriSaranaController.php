@@ -20,8 +20,6 @@ class KategoriSaranaController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        // "kode" dan "jumlah_item" TIDAK divalidasi/diminta dari request,
-        // karena keduanya otomatis diisi oleh model (lihat KategoriSarana::boot()).
         $validator = Validator::make($request->all(), [
             'nama_kategori' => ['required', 'string', 'max:255', 'unique:kategori_sarana,nama_kategori'],
             'keterangan' => ['nullable', 'string'],
@@ -42,19 +40,21 @@ class KategoriSaranaController extends Controller
         ], 201);
     }
 
-    public function show(KategoriSarana $kategoriSarana): JsonResponse
+    // Nama parameter di sini WAJIB "kategori", sama seperti nama resource
+    // di routes/api.php: Route::apiResource('kategori', ...)
+    public function show(KategoriSarana $kategori): JsonResponse
     {
         return response()->json([
-            'data' => $kategoriSarana->load('sarana'),
+            'data' => $kategori->load('sarana'),
         ]);
     }
 
-    public function update(Request $request, KategoriSarana $kategoriSarana): JsonResponse
+    public function update(Request $request, KategoriSarana $kategori): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'nama_kategori' => [
                 'sometimes', 'string', 'max:255',
-                'unique:kategori_sarana,nama_kategori,' . $kategoriSarana->id,
+                'unique:kategori_sarana,nama_kategori,' . $kategori->id,
             ],
             'keterangan' => ['nullable', 'string'],
         ]);
@@ -66,23 +66,23 @@ class KategoriSaranaController extends Controller
             ], 422);
         }
 
-        $kategoriSarana->update($validator->validated());
+        $kategori->update($validator->validated());
 
         return response()->json([
             'message' => 'Kategori sarana berhasil diperbarui',
-            'data' => $kategoriSarana,
+            'data' => $kategori,
         ]);
     }
 
-    public function destroy(KategoriSarana $kategoriSarana): JsonResponse
+    public function destroy(KategoriSarana $kategori): JsonResponse
     {
-        if ($kategoriSarana->sarana()->exists()) {
+        if ($kategori->sarana()->exists()) {
             return response()->json([
                 'message' => 'Kategori tidak bisa dihapus karena masih dipakai oleh data sarana',
             ], 422);
         }
 
-        $kategoriSarana->delete();
+        $kategori->delete();
 
         return response()->json([
             'message' => 'Kategori sarana berhasil dihapus',
