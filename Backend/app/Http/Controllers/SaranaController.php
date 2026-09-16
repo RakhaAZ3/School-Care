@@ -41,7 +41,7 @@ class SaranaController extends Controller
 
         return response()->json([
             'message' => 'Sarana berhasil ditambahkan',
-            'data' => $sarana,
+            'data' => $sarana->load(['kategori', 'ruangan']),
         ], 201);
     }
 
@@ -67,19 +67,19 @@ class SaranaController extends Controller
                 'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
-        }
+        }   
 
         $sarana->update($validator->validated());
 
         return response()->json([
             'message' => 'Sarana berhasil diperbarui',
-            'data' => $sarana,
+            'data' => $sarana->load(['kategori', 'ruangan']),
         ]);
     }
 
     public function destroy(Sarana $sarana): JsonResponse
     {
-        $sarana->delete();
+        $sarana->forceDelete();
 
         return response()->json([
             'message' => 'Sarana berhasil dihapus',
