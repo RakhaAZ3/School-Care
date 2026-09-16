@@ -14,65 +14,75 @@ class Sarana extends Model
 
     protected $table = 'sarana';
 
+    // "kode_sarana" sengaja TIDAK dimasukkan ke fillable,
+    // karena diisi otomatis oleh sistem (lihat boot() di bawah).
     protected $fillable = [
-        'kode_sarana',
         'nama_sarana',
         'kategori_id',
         'ruangan_id',
         'jumlah',
         'kondisi',
-        'status',
-        'tahun_pengadaan',
-        'sumber_dana',
-        'harga',
-        'foto',
-        'keterangan',
     ];
 
     protected function casts(): array
     {
         return [
-            'harga' => 'decimal:2',
-            'tahun_pengadaan' => 'integer',
             'jumlah' => 'integer',
         ];
     }
 
-    /**
-     * Relasi: Sarana termasuk dalam satu Kategori
-     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // Auto generate kode_sarana setiap kali sarana baru dibuat
+        // Format: SR-0001, SR-0002, dst.
+        static::creating(function (Sarana $sarana) {
+            $lastId = (self::withTrashed()->max('id') ?? 0) + 1;
+            $sarana->kode_sarana = 'SR-' . str_pad($lastId, 4, '0', STR_PAD_LEFT);
+        });
+
+        static::created(function (Sarana $sarana) {
+            $sarana->kategori()->increment('jumlah_item');
+        });
+
+        static::deleted(function (Sarana $sarana) {
+            $sarana->kategori()->decrement('jumlah_item');
+        });
+
+        static::restored(function (Sarana $sarana) {
+            $sarana->kategori()->increment('jumlah_item');
+        });
+
+        static::updated(function (Sarana $sarana) {
+            if ($sarana->isDirty('kategori_id')) {
+                $kategoriLama = $sarana->getOriginal('kategori_id');
+                KategoriSarana::where('id', $kategoriLama)->decrement('jumlah_item');
+                $sarana->kategori()->increment('jumlah_item');
+            }
+        });
+    }
+
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(KategoriSarana::class, 'kategori_id');
     }
 
-    /**
-     * Relasi: Sarana berada di satu Ruangan
-     */
     public function ruangan(): BelongsTo
     {
         return $this->belongsTo(Ruangan::class, 'ruangan_id');
     }
 
-    /**
-     * Relasi: Sarana punya banyak riwayat Peminjaman
-     */
     public function peminjaman(): HasMany
     {
         return $this->hasMany(Peminjaman::class, 'sarana_id');
     }
 
-    /**
-     * Relasi: Sarana punya banyak riwayat Pemeliharaan
-     */
     public function pemeliharaan(): HasMany
     {
         return $this->hasMany(Pemeliharaan::class, 'sarana_id');
     }
 
-    /**
-     * Relasi: Sarana punya banyak Laporan Kerusakan
-     */
     public function laporanKerusakan(): HasMany
     {
         return $this->hasMany(LaporanKerusakan::class, 'sarana_id');

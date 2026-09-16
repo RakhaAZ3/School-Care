@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::create('kategori_sarana', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_kategori');       // Elektronik, Furnitur, Alat Praktik, dst
+            $table->string('kode')->unique();      // auto generate, contoh: KTG-0001
+            $table->string('nama_kategori');        // Elektronik, Furnitur, Alat Praktik, dst
+            $table->integer('jumlah_item')->default(0); // auto terhitung dari jumlah sarana
             $table->text('keterangan')->nullable();
             $table->timestamps();
         });
