@@ -14,7 +14,7 @@
       </div>
       <h1>Maintenance & Jadwal Perawatan 🔧</h1>
       <p>Kelola riwayat perawatan berkala dan atur jadwal pemeriksaan fasilitas.</p>
-      
+
       <div class="header-action-btn">
         <button class="btn-primary-glow" @click="openTambahModal">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -22,6 +22,8 @@
         </button>
       </div>
     </header>
+
+    <p v-if="errorMessage" class="error-banner">{{ errorMessage }}</p>
 
     <!-- Banner Pengingat (Reminder Box) - Teks Rata Tengah -->
     <div class="reminder-box card-box" v-if="jadwalMendekati.length > 0">
@@ -68,10 +70,10 @@
     <div class="action-bar-card">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Cari fasilitas, jenis perawatan, atau teknisi..." 
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Cari fasilitas, jenis perawatan, atau teknisi..."
           class="input-search"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
@@ -94,19 +96,23 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredMaintenance" :key="item.id" class="table-row">
+            <tr v-if="isLoading">
+              <td colspan="7" class="text-center" style="padding: 30px;">Memuat data...</td>
+            </tr>
+
+            <tr v-for="item in filteredMaintenance" :key="item.id" class="table-row" v-else>
               <td>
-                <strong class="text-dark">{{ item.fasilitas }}</strong>
+                <strong class="text-dark">{{ item.sarana?.nama_sarana ?? '-' }}</strong>
               </td>
-              <td class="font-medium">{{ item.jenis }}</td>
+              <td class="font-medium">{{ item.jenis_perawatan }}</td>
               <td>
                 <span class="tech-tag">👤 {{ item.teknisi }}</span>
               </td>
-              <td>Rp {{ item.biaya.toLocaleString('id-ID') }}</td>
-              <td>{{ item.tanggal }}</td>
+              <td>Rp {{ Number(item.biaya ?? 0).toLocaleString('id-ID') }}</td>
+              <td>{{ item.tanggal_pemeliharaan }}</td>
               <td>
-                <strong :class="{'text-danger': isMendekati(item.pemeriksaanBerikutnya)}">
-                  {{ item.pemeriksaanBerikutnya }}
+                <strong :class="{'text-danger': isMendekati(item.pemeriksaan_berikutnya)}">
+                  {{ item.pemeriksaan_berikutnya ?? '-' }}
                 </strong>
               </td>
               <td class="text-center">
@@ -117,7 +123,7 @@
             </tr>
 
             <!-- Empty State -->
-            <tr v-if="filteredMaintenance.length === 0">
+            <tr v-if="!isLoading && filteredMaintenance.length === 0">
               <td colspan="7">
                 <div class="empty-state-box">
                   <div class="empty-icon">🔍</div>
@@ -145,14 +151,21 @@
 
           <form @submit.prevent="tambahMaintenance">
             <div class="modal-body">
+              <p v-if="formError" class="error-banner" style="margin-top: 0;">{{ formError }}</p>
+
               <div class="form-grid">
                 <div class="form-group full-width">
                   <label>Fasilitas <span class="required">*</span></label>
-                  <input v-model="form.fasilitas" type="text" placeholder="Misal: Proyektor Lab RPL" required />
+                  <select v-model="form.sarana_id" required>
+                    <option value="" disabled>Pilih fasilitas...</option>
+                    <option v-for="s in saranaOptions" :key="s.id" :value="s.id">
+                      {{ s.nama_sarana }}
+                    </option>
+                  </select>
                 </div>
                 <div class="form-group full-width">
                   <label>Jenis Perawatan <span class="required">*</span></label>
-                  <input v-model="form.jenis_pemeliharaan" type="text" placeholder="Misal: Pembersihan lensa & filter" required />
+                  <input v-model="form.jenis_perawatan" type="text" placeholder="Misal: Pembersihan lensa & filter" required />
                 </div>
                 <div class="form-group">
                   <label>Teknisi / Vendor <span class="required">*</span></label>
@@ -168,14 +181,16 @@
                 </div>
                 <div class="form-group">
                   <label>Pemeriksaan Berikutnya <span class="required">*</span></label>
-                  <input v-model="form.pemeriksaanBerikutnya" type="date" required />
+                  <input v-model="form.pemeriksaan_berikutnya" type="date" required />
                 </div>
               </div>
             </div>
 
             <div class="modal-footer">
               <button type="button" class="btn-ghost" @click="showModal = false">Batal</button>
-              <button type="submit" class="btn-primary-glow">Simpan Record</button>
+              <button type="submit" class="btn-primary-glow" :disabled="isSubmitting">
+                {{ isSubmitting ? 'Menyimpan...' : 'Simpan Record' }}
+              </button>
             </div>
           </form>
         </div>
@@ -185,8 +200,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api'
 
 const router = useRouter()
 
@@ -196,77 +212,119 @@ const kembaliKeBeranda = () => {
 
 const showModal = ref(false)
 const searchQuery = ref('')
+const isLoading = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const formError = ref('')
 
-const maintenanceList = ref([
-  {
-    id: 1,
-    fasilitas: 'Proyektor Lab RPL',
-    jenis_pemeliharaan: 'Pembersihan Lensa',
-    teknisi: 'Ahmad (Internal)',
-    biaya: 50000,
-    tanggal_pemeliharaan : '2026-09-02',
-    pemeriksaanBerikutnya: '2026-10-10',
-    status: 'Selesai'
-  },
-  {
-    id: 2,
-    fasilitas: 'AC Lab TKJ',
-    jenis_pemeliharaan: 'Cuci AC & Isi Freon',
-    teknisi: 'CV Bintang Service',
-    biaya: 150000,
-    tanggal_pemeliharaan : '2026-08-15',
-    pemeriksaanBerikutnya: '2026-09-05',
-    status: 'Selesai'
-  }
-])
+const maintenanceList = ref([])
+const saranaOptions = ref([])
 
 const form = ref({
-  fasilitas: '',
-  jenis_pemeliharaan: '',
+  sarana_id: '',
+  jenis_perawatan: '',
   teknisi: '',
   biaya: 0,
-  tanggal_pemeliharaan : '',
-  pemeriksaanBerikutnya: '',
-  status: 'Selesai'
+  tanggal_pemeliharaan: '',
+  pemeriksaan_berikutnya: '',
+})
+
+const fetchMaintenance = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get('/pemeliharaan')
+    maintenanceList.value = response.data.data
+  } catch (error) {
+    errorMessage.value = 'Gagal memuat data maintenance. Pastikan backend sedang berjalan.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const fetchSarana = async () => {
+  try {
+    const response = await api.get('/sarana')
+    saranaOptions.value = response.data.data
+  } catch (error) {
+    // Tidak fatal, dropdown cukup kosong kalau gagal
+  }
+}
+
+onMounted(() => {
+  fetchMaintenance()
+  fetchSarana()
 })
 
 // Statistics Computation
 const totalMaintenance = computed(() => maintenanceList.value.length)
-const totalBiaya = computed(() => maintenanceList.value.reduce((acc, curr) => acc + curr.biaya, 0))
+const totalBiaya = computed(() =>
+  maintenanceList.value.reduce((acc, curr) => acc + Number(curr.biaya ?? 0), 0)
+)
 
 const isMendekati = (tanggalStr) => {
+  if (!tanggalStr) return false
   const targetDate = new Date(tanggalStr)
-  const today = new Date('2026-09-02')
+  const today = new Date()
   const selisihHari = (targetDate - today) / (1000 * 60 * 60 * 24)
   return selisihHari <= 7 && selisihHari >= 0
 }
 
 const jadwalMendekati = computed(() => {
-  return maintenanceList.value.filter(item => isMendekati(item.pemeriksaanBerikutnya))
+  return maintenanceList.value.filter(item => isMendekati(item.pemeriksaan_berikutnya))
 })
 
 // Filter Logic
 const filteredMaintenance = computed(() => {
   return maintenanceList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    return item.fasilitas.toLowerCase().includes(q) || 
-           item.jenis_pemeliharaan.toLowerCase().includes(q) ||
-           item.teknisi.toLowerCase().includes(q)
+    return (
+      (item.sarana?.nama_sarana ?? '').toLowerCase().includes(q) ||
+      item.jenis_perawatan.toLowerCase().includes(q) ||
+      item.teknisi.toLowerCase().includes(q)
+    )
   })
 })
 
 const openTambahModal = () => {
-  form.value = { fasilitas: '', jenis_pemeliharaan: '', teknisi: '', biaya: 0, tanggal_pemeliharaan : '', pemeriksaanBerikutnya: '', status: 'Selesai' }
+  form.value = {
+    sarana_id: '',
+    jenis_perawatan: '',
+    teknisi: '',
+    biaya: 0,
+    tanggal_pemeliharaan: '',
+    pemeriksaan_berikutnya: '',
+  }
+  formError.value = ''
   showModal.value = true
 }
 
-const tambahMaintenance = () => {
-  const newId = maintenanceList.value.length > 0 ? Math.max(...maintenanceList.value.map(i => i.id)) + 1 : 1
-  maintenanceList.value.unshift({
-    id: newId,
-    ...form.value
-  })
-  showModal.value = false
+const tambahMaintenance = async () => {
+  formError.value = ''
+  isSubmitting.value = true
+
+  try {
+    const response = await api.post('/pemeliharaan', {
+      sarana_id: form.value.sarana_id,
+      jenis_perawatan: form.value.jenis_perawatan,
+      teknisi: form.value.teknisi,
+      biaya: form.value.biaya,
+      tanggal_pemeliharaan: form.value.tanggal_pemeliharaan,
+      pemeriksaan_berikutnya: form.value.pemeriksaan_berikutnya,
+    })
+
+    maintenanceList.value.unshift(response.data.data)
+    showModal.value = false
+  } catch (error) {
+    if (error.response?.status === 422) {
+      const errors = error.response.data.errors
+      formError.value = Object.values(errors).flat().join(' ')
+    } else {
+      formError.value = 'Gagal menyimpan data maintenance. Coba lagi.'
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -277,6 +335,17 @@ const tambahMaintenance = () => {
   padding: 40px 24px;
   box-sizing: border-box;
   animation: fadeIn 0.4s ease-out;
+}
+
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 /* Posisi Tombol Kembali di Kiri */
@@ -375,10 +444,15 @@ const tambahMaintenance = () => {
   white-space: nowrap;
 }
 
-.btn-primary-glow:hover {
+.btn-primary-glow:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.btn-primary-glow:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* Banner Pengingat (Reminder Box) - Diatur Rata Tengah */
@@ -696,7 +770,7 @@ const tambahMaintenance = () => {
 
 .required { color: #ef4444; }
 
-.form-group input {
+.form-group input, .form-group select {
   padding: 10px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -706,7 +780,7 @@ const tambahMaintenance = () => {
   background: white;
 }
 
-.form-group input:focus {
+.form-group input:focus, .form-group select:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }

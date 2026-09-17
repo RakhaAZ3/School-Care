@@ -1,48 +1,119 @@
 <template>
   <div class="auth-container">
-    <!-- Background Glow Ornaments -->
-    <div class="bg-glow-blob blob-1"></div>
-    <div class="bg-glow-blob blob-2"></div>
+    <div class="auth-glow glow-one"></div>
+    <div class="auth-glow glow-two"></div>
 
     <div class="auth-card">
-      <div class="auth-header">
-        <div class="brand-logo">🏫</div>
-        <h2>Masuk ke <span class="text-primary">SchoolCare</span></h2>
-        <p>Silakan masukkan akun untuk mengakses panel sistem.</p>
+
+      <!-- BRAND -->
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-school"></i>
+        </div>
+
+        <div>
+          <h1>SchoolCare</h1>
+          <span>Sistem Informasi Sarana & Prasarana</span>
+        </div>
       </div>
 
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+      <!-- HEADER -->
+      <div class="auth-header">
+        <h2>Selamat Datang 👋</h2>
+        <p>Masuk untuk mengakses halaman pengguna.</p>
+      </div>
 
-      <form @submit.prevent="handleLogin" class="auth-form">
+      <!-- ERROR -->
+      <div
+        v-if="errorMessage"
+        class="error-message"
+      >
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- FORM -->
+      <form @submit.prevent="handleLogin">
+
+        <!-- EMAIL -->
         <div class="form-group">
-          <label>Email Pengguna</label>
-          <input 
-            type="email" 
-            v-model="email" 
-            placeholder="contoh: admin@schoolcare.app" 
-            required 
-          />
+          <label for="email">
+            Email
+          </label>
+
+          <div class="input-wrapper">
+            <i class="fa-regular fa-envelope"></i>
+
+            <input
+              id="email"
+              v-model="email"
+              type="email"
+              placeholder="Masukkan email"
+              required
+            />
+          </div>
         </div>
 
+        <!-- PASSWORD -->
         <div class="form-group">
-          <label>Kata Sandi</label>
-          <input 
-            type="password" 
-            v-model="password" 
-            placeholder="••••••••" 
-            required 
-          />
+          <label for="password">
+            Password
+          </label>
+
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock"></i>
+
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              placeholder="Masukkan password"
+              required
+            />
+          </div>
         </div>
 
-        <button type="submit" class="btn-submit" :disabled="isLoading">
-          {{ isLoading ? 'Memproses...' : 'Masuk Sekarang 🚀' }}
+        <!-- BUTTON -->
+        <button
+          type="submit"
+          class="login-button"
+          :disabled="isLoading"
+        >
+          <span v-if="!isLoading">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            Masuk
+          </span>
+
+          <span v-else>
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Memproses...
+          </span>
         </button>
+
       </form>
 
-      <div class="auth-footer">
-        <p>Belum punya akun? <router-link to="/register">Daftar di sini</router-link></p>
-        <p style="margin-top: 8px;"><router-link to="/" class="back-link">← Kembali ke Beranda</router-link></p>
+      <!-- REGISTER -->
+      <div class="register-link">
+        <span>Belum punya akun?</span>
+
+        <button
+          type="button"
+          @click="router.push('/register')"
+        >
+          Daftar sekarang
+        </button>
       </div>
+
+      <!-- BACK -->
+      <button
+        class="back-button"
+        type="button"
+        @click="router.push('/')"
+      >
+        <i class="fa-solid fa-arrow-left"></i>
+        Kembali ke halaman utama
+      </button>
+
     </div>
   </div>
 </template>
@@ -53,6 +124,7 @@ import { useRouter } from 'vue-router'
 import api from '../../utils/api'
 
 const router = useRouter()
+
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
@@ -68,19 +140,42 @@ const handleLogin = async () => {
       password: password.value,
     })
 
-    localStorage.setItem('token', response.data.access_token)
-    localStorage.setItem('user', JSON.stringify(response.data.user))
-    localStorage.setItem('isLoggedIn', 'true')
+    localStorage.setItem(
+      'token',
+      response.data.access_token
+    )
 
-    router.push('/admin') // atau sesuaikan dengan route dashboard kamu
+    localStorage.setItem(
+      'user',
+      JSON.stringify(response.data.user)
+    )
+
+    localStorage.setItem(
+      'isLoggedIn',
+      'true'
+    )
+
+    // ==========================================
+    // SETELAH LOGIN → MASUK KE PENGGUNA
+    // ==========================================
+    router.push('/pengguna/dashboard')
+
   } catch (error) {
-    if (error.response?.status === 422 || error.response?.status === 401) {
-      errorMessage.value = 'Email atau password salah.'
+
+    if (
+      error.response?.status === 422 ||
+      error.response?.status === 401
+    ) {
+      errorMessage.value =
+        'Email atau password salah.'
     } else if (error.request) {
-      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+      errorMessage.value =
+        'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
     } else {
-      errorMessage.value = 'Terjadi kesalahan, coba lagi.'
+      errorMessage.value =
+        'Terjadi kesalahan, coba lagi.'
     }
+
   } finally {
     isLoading.value = false
   }
@@ -88,152 +183,343 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
 .auth-container {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8fafc;
-  font-family: 'Plus Jakarta Sans', sans-serif;
   position: relative;
   overflow: hidden;
-  padding: 20px;
-}
-
-.bg-glow-blob {
-  position: absolute;
-  width: 450px;
-  height: 450px;
-  border-radius: 50%;
-  filter: blur(80px);
-  z-index: 0;
-  opacity: 0.15;
-  pointer-events: none;
-}
-.blob-1 { top: -100px; left: -100px; background: #2563eb; }
-.blob-2 { bottom: -100px; right: -100px; background: #7c3aed; }
-
-.auth-card {
-  background: white;
-  padding: 40px;
-  border-radius: 24px;
-  border: 1px solid #e2e8f0;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
-  position: relative;
-  z-index: 10;
-  text-align: left;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.brand-logo {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  width: 54px;
-  height: 54px;
-  margin: 0 auto 16px auto;
-  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  padding: 30px 20px;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(37, 99, 235, 0.08),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(124, 58, 237, 0.08),
+      transparent 35%
+    ),
+    #f8fafc;
+
+  font-family: 'Inter', sans-serif;
+}
+
+/* GLOW */
+.auth-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+
+.glow-one {
+  width: 260px;
+  height: 260px;
+  background: rgba(37, 99, 235, 0.12);
+  top: -80px;
+  left: -80px;
+}
+
+.glow-two {
+  width: 280px;
+  height: 280px;
+  background: rgba(124, 58, 237, 0.12);
+  right: -100px;
+  bottom: -100px;
+}
+
+/* CARD */
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 2;
+
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+
+  padding: 38px;
+
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+/* BRAND */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 35px;
+}
+
+.brand-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #7c3aed
+  );
+
+  color: white;
+  font-size: 21px;
+}
+
+.brand h1 {
+  margin: 0;
+
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+
+  color: #111827;
+}
+
+.brand span {
+  display: block;
+  margin-top: 3px;
+
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* HEADER */
+.auth-header {
+  margin-bottom: 25px;
 }
 
 .auth-header h2 {
-  margin: 0 0 6px 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-.text-primary { color: #2563eb; }
-.auth-header p { margin: 0; color: #64748b; font-size: 0.9rem; }
+  margin: 0 0 8px;
 
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 27px;
+  font-weight: 800;
+
+  color: #111827;
+}
+
+.auth-header p {
+  margin: 0;
+
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ERROR */
 .error-message {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  padding: 12px 14px;
+  margin-bottom: 20px;
+
+  border-radius: 12px;
+
   background: #fef2f2;
   border: 1px solid #fecaca;
+
   color: #dc2626;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  margin-bottom: 20px;
-  text-align: center;
+  font-size: 13px;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
+/* FORM */
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 19px;
 }
 
 .form-group label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #334155;
+  display: block;
+  margin-bottom: 8px;
+
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.form-group input {
-  padding: 12px 16px;
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 15px 0 43px;
+
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  font-size: 0.95rem;
+
   outline: none;
-  transition: all 0.2s;
-  background: #f8fafc;
+
+  color: #1e293b;
+  background: #ffffff;
+
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+
+  transition: 0.2s;
 }
 
-.form-group input:focus {
+.input-wrapper input:focus {
   border-color: #2563eb;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
-.btn-submit {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: white;
+.input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+/* LOGIN BUTTON */
+.login-button {
+  width: 100%;
+  height: 49px;
+
   border: none;
-  padding: 14px;
   border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    #2563eb,
+    #7c3aed
+  );
+
+  color: white;
+
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
   font-weight: 700;
-  font-size: 1rem;
+
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-  transition: all 0.25s;
-  margin-top: 10px;
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
-.btn-submit:hover:not(:disabled) {
+.login-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
+
+  box-shadow:
+    0 10px 25px rgba(37, 99, 235, 0.2);
 }
 
-.btn-submit:disabled {
+.login-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-.auth-footer {
-  margin-top: 25px;
-  text-align: center;
-  font-size: 0.9rem;
+.login-button i {
+  margin-right: 7px;
+}
+
+/* REGISTER */
+.register-link {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+
+  margin-top: 22px;
+
+  font-size: 13px;
   color: #64748b;
 }
 
-.auth-footer a {
+.register-link button {
+  padding: 0;
+
+  border: none;
+  background: none;
+
   color: #2563eb;
+
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 700;
-  text-decoration: none;
+
+  cursor: pointer;
 }
-.auth-footer a:hover { text-decoration: underline; }
-.back-link { color: #64748b !important; font-size: 0.85rem; }
+
+.register-link button:hover {
+  text-decoration: underline;
+}
+
+/* BACK */
+.back-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  width: 100%;
+
+  margin-top: 20px;
+  padding-top: 18px;
+
+  border: none;
+  border-top: 1px solid #f1f5f9;
+
+  background: none;
+
+  color: #64748b;
+
+  font-family: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.back-button:hover {
+  color: #2563eb;
+}
+
+/* RESPONSIVE */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 28px 22px;
+    border-radius: 20px;
+  }
+
+  .auth-header h2 {
+    font-size: 23px;
+  }
+
+  .brand {
+    margin-bottom: 28px;
+  }
+}
 </style>

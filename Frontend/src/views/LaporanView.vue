@@ -14,7 +14,7 @@
       </div>
       <h1>Laporan Kerusakan 🚨</h1>
       <p>Pantau dan perbarui status laporan fasilitas yang rusak secara berkala.</p>
-      
+
       <div class="header-action-btn">
         <button class="btn-primary-glow" @click="openTambahModal">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -22,6 +22,8 @@
         </button>
       </div>
     </header>
+
+    <p v-if="errorMessage" class="error-banner">{{ errorMessage }}</p>
 
     <!-- Stat Cards Overview -->
     <div class="stats-grid">
@@ -52,10 +54,10 @@
     <div class="action-bar-card">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Cari judul laporan, fasilitas, atau ruangan..." 
+        <input
+          type="text"
+          v-model="searchQuery"
+          placeholder="Cari judul laporan, fasilitas, atau ruangan..."
           class="input-search"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
@@ -77,14 +79,18 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in filteredLaporan" :key="item.id" class="table-row">
+            <tr v-if="isLoading">
+              <td colspan="6" class="text-center" style="padding: 30px;">Memuat data...</td>
+            </tr>
+
+            <tr v-for="item in filteredLaporan" :key="item.id" class="table-row" v-else>
               <td>
                 <strong class="text-dark">{{ item.judul }}</strong>
                 <p class="desc-text">{{ item.deskripsi }}</p>
               </td>
-              <td class="font-medium">{{ item.fasilitas }}</td>
+              <td class="font-medium">{{ item.sarana?.nama_sarana ?? '-' }}</td>
               <td>
-                <span class="room-tag">📍 {{ item.ruangan }}</span>
+                <span class="room-tag">📍 {{ item.ruangan?.nama_ruangan ?? '-' }}</span>
               </td>
               <td>
                 <span :class="['badge-priority', item.prioritas.toLowerCase()]">
@@ -97,8 +103,8 @@
                 </span>
               </td>
               <td class="text-center">
-                <select 
-                  :value="item.status" 
+                <select
+                  :value="item.status"
                   @change="updateStatus(item.id, $event.target.value)"
                   class="select-status"
                 >
@@ -111,7 +117,7 @@
             </tr>
 
             <!-- Empty State -->
-            <tr v-if="filteredLaporan.length === 0">
+            <tr v-if="!isLoading && filteredLaporan.length === 0">
               <td colspan="6">
                 <div class="empty-state-box">
                   <div class="empty-icon">🔍</div>
@@ -139,25 +145,34 @@
 
           <form @submit.prevent="tambahLaporan">
             <div class="modal-body">
+              <p v-if="formError" class="error-banner" style="margin-top: 0;">{{ formError }}</p>
+
               <div class="form-grid">
                 <div class="form-group full-width">
                   <label>Judul Laporan <span class="required">*</span></label>
                   <input v-model="form.judul" type="text" placeholder="Misal: AC Mati / Tidak Dingin" required />
                 </div>
+
                 <div class="form-group full-width">
                   <label>Fasilitas <span class="required">*</span></label>
-                  <input v-model="form.fasilitas" type="text" placeholder="Misal: AC Split 2PK" required />
-                </div>
-                <div class="form-group full-width">
-                  <label>Ruangan <span class="required">*</span></label>
-                  <select v-model="form.ruangan" required>
-                    <option value="Lab RPL">Lab RPL</option>
-                    <option value="Lab TKJ">Lab TKJ</option>
-                    <option value="Perpustakaan">Perpustakaan</option>
-                    <option value="Aula Utama">Aula Utama</option>
-                    <option value="Ruang Guru">Ruang Guru</option>
+                  <select v-model="form.sarana_id" required>
+                    <option value="" disabled>Pilih fasilitas...</option>
+                    <option v-for="s in saranaOptions" :key="s.id" :value="s.id">
+                      {{ s.nama_sarana }}
+                    </option>
                   </select>
                 </div>
+
+                <div class="form-group full-width">
+                  <label>Ruangan <span class="required">*</span></label>
+                  <select v-model="form.ruangan_id" required>
+                    <option value="" disabled>Pilih ruangan...</option>
+                    <option v-for="r in ruanganOptions" :key="r.id" :value="r.id">
+                      {{ r.nama_ruangan }}
+                    </option>
+                  </select>
+                </div>
+
                 <div class="form-group full-width">
                   <label>Prioritas <span class="required">*</span></label>
                   <select v-model="form.prioritas" required>
@@ -166,6 +181,7 @@
                     <option value="Tinggi">Tinggi</option>
                   </select>
                 </div>
+
                 <div class="form-group full-width">
                   <label>Deskripsi Kerusakan <span class="required">*</span></label>
                   <textarea v-model="form.deskripsi" rows="3" placeholder="Jelaskan detail kerusakannya..." required></textarea>
@@ -175,7 +191,9 @@
 
             <div class="modal-footer">
               <button type="button" class="btn-ghost" @click="showModal = false">Batal</button>
-              <button type="submit" class="btn-primary-glow">Kirim Laporan</button>
+              <button type="submit" class="btn-primary-glow" :disabled="isSubmitting">
+                {{ isSubmitting ? 'Mengirim...' : 'Kirim Laporan' }}
+              </button>
             </div>
           </form>
         </div>
@@ -185,8 +203,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api'
 
 const router = useRouter()
 
@@ -196,48 +215,79 @@ const kembaliKeBeranda = () => {
 
 const showModal = ref(false)
 const searchQuery = ref('')
+const isLoading = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const formError = ref('')
 
-const laporanList = ref([
-  {
-    id: 1,
-    judul: 'Proyektor Buram',
-    fasilitas: 'Proyektor Epson',
-    ruangan: 'Lab RPL',
-    prioritas: 'Tinggi',
-    deskripsi: 'Tampilan proyektor bergaris dan warna pudar.',
-    status: 'Menunggu'
-  },
-  {
-    id: 2,
-    judul: 'AC Bocor Air',
-    fasilitas: 'AC Split 2PK',
-    ruangan: 'Lab TKJ',
-    prioritas: 'Sedang',
-    deskripsi: 'Air menetes ke meja komputer nomor 5.',
-    status: 'Diproses'
-  }
-])
+const laporanList = ref([])
+const saranaOptions = ref([])
+const ruanganOptions = ref([])
 
 const form = ref({
   judul: '',
-  fasilitas: '',
-  ruangan: 'Lab RPL',
+  deskripsi: '',
+  sarana_id: '',
+  ruangan_id: '',
   prioritas: 'Sedang',
-  deskripsi: ''
+})
+
+// Ambil data laporan dari backend
+const fetchLaporan = async () => {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get('/laporan-kerusakan')
+    laporanList.value = response.data.data
+  } catch (error) {
+    errorMessage.value = 'Gagal memuat data laporan. Pastikan backend sedang berjalan.'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Ambil daftar sarana untuk dropdown "Fasilitas"
+const fetchSarana = async () => {
+  try {
+    const response = await api.get('/sarana')
+    saranaOptions.value = response.data.data
+  } catch (error) {
+    // Tidak fatal, dropdown cukup kosong kalau gagal
+  }
+}
+
+// Ambil daftar ruangan untuk dropdown "Ruangan"
+const fetchRuangan = async () => {
+  try {
+    const response = await api.get('/ruangan')
+    ruanganOptions.value = response.data.data
+  } catch (error) {
+    // Tidak fatal, dropdown cukup kosong kalau gagal
+  }
+}
+
+onMounted(() => {
+  fetchLaporan()
+  fetchSarana()
+  fetchRuangan()
 })
 
 // Statistics Computation
 const totalLaporan = computed(() => laporanList.value.length)
-const laporanDiproses = computed(() => laporanList.value.filter(i => i.status === 'Diproses' || i.status === 'Diverifikasi').length)
+const laporanDiproses = computed(() =>
+  laporanList.value.filter(i => i.status === 'Diproses' || i.status === 'Diverifikasi').length
+)
 const laporanSelesai = computed(() => laporanList.value.filter(i => i.status === 'Selesai').length)
 
 // Filter Logic
 const filteredLaporan = computed(() => {
   return laporanList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    return item.judul.toLowerCase().includes(q) || 
-           item.fasilitas.toLowerCase().includes(q) ||
-           item.ruangan.toLowerCase().includes(q)
+    return (
+      item.judul.toLowerCase().includes(q) ||
+      (item.sarana?.nama_sarana ?? '').toLowerCase().includes(q) ||
+      (item.ruangan?.nama_ruangan ?? '').toLowerCase().includes(q)
+    )
   })
 })
 
@@ -248,26 +298,54 @@ const getStatusClass = (status) => {
   return 'status-done'
 }
 
-const updateStatus = (id, statusBaru) => {
+// Update status langsung dari dropdown di tabel
+const updateStatus = async (id, statusBaru) => {
   const item = laporanList.value.find(i => i.id === id)
-  if (item) {
-    item.status = statusBaru
+  const statusLama = item?.status
+
+  // Update tampilan dulu (optimistic), supaya terasa cepat
+  if (item) item.status = statusBaru
+
+  try {
+    await api.patch(`/laporan-kerusakan/${id}/status`, { status: statusBaru })
+  } catch (error) {
+    // Kalau gagal di server, kembalikan ke status semula
+    if (item) item.status = statusLama
+    errorMessage.value = 'Gagal memperbarui status. Coba lagi.'
   }
 }
 
 const openTambahModal = () => {
-  form.value = { judul: '', fasilitas: '', ruangan: 'Lab RPL', prioritas: 'Sedang', deskripsi: '' }
+  form.value = { judul: '', deskripsi: '', sarana_id: '', ruangan_id: '', prioritas: 'Sedang' }
+  formError.value = ''
   showModal.value = true
 }
 
-const tambahLaporan = () => {
-  const newId = laporanList.value.length > 0 ? Math.max(...laporanList.value.map(i => i.id)) + 1 : 1
-  laporanList.value.unshift({
-    id: newId,
-    ...form.value,
-    status: 'Menunggu'
-  })
-  showModal.value = false
+const tambahLaporan = async () => {
+  formError.value = ''
+  isSubmitting.value = true
+
+  try {
+    const response = await api.post('/laporan-kerusakan', {
+      judul: form.value.judul,
+      deskripsi: form.value.deskripsi,
+      sarana_id: form.value.sarana_id,
+      ruangan_id: form.value.ruangan_id,
+      prioritas: form.value.prioritas,
+    })
+
+    laporanList.value.unshift(response.data.data)
+    showModal.value = false
+  } catch (error) {
+    if (error.response?.status === 422) {
+      const errors = error.response.data.errors
+      formError.value = Object.values(errors).flat().join(' ')
+    } else {
+      formError.value = 'Gagal mengirim laporan. Coba lagi.'
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -278,6 +356,17 @@ const tambahLaporan = () => {
   padding: 40px 24px;
   box-sizing: border-box;
   animation: fadeIn 0.4s ease-out;
+}
+
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 /* Posisi Tombol Kembali di Kiri */
@@ -376,10 +465,15 @@ const tambahLaporan = () => {
   white-space: nowrap;
 }
 
-.btn-primary-glow:hover {
+.btn-primary-glow:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+}
+
+.btn-primary-glow:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 /* Stat Cards Grid */

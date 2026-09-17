@@ -16,6 +16,8 @@
       <p>Kelola dan berikan persetujuan untuk peminjaman alat serta pengajuan kebutuhan barang baru.</p>
     </header>
 
+    <p v-if="errorMessage" class="error-banner">{{ errorMessage }}</p>
+
     <!-- Stat Cards Overview -->
     <div class="stats-grid">
       <div class="stat-card amber">
@@ -44,14 +46,14 @@
     <!-- Tab Filter Navigasi & Search Bar -->
     <div class="action-bar-card">
       <div class="tab-menu">
-        <button 
-          :class="['tab-btn', activeTab === 'peminjaman' ? 'active' : '']" 
+        <button
+          :class="['tab-btn', activeTab === 'peminjaman' ? 'active' : '']"
           @click="activeTab = 'peminjaman'"
         >
           📦 Peminjaman Fasilitas
         </button>
-        <button 
-          :class="['tab-btn', activeTab === 'kebutuhan' ? 'active' : '']" 
+        <button
+          :class="['tab-btn', activeTab === 'kebutuhan' ? 'active' : '']"
           @click="activeTab = 'kebutuhan'"
         >
           🛍️ Pengajuan Barang Baru
@@ -60,10 +62,10 @@
 
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          :placeholder="activeTab === 'peminjaman' ? 'Cari pemohon atau fasilitas...' : 'Cari pemohon atau nama barang...'" 
+        <input
+          type="text"
+          v-model="searchQuery"
+          :placeholder="activeTab === 'peminjaman' ? 'Cari pemohon atau fasilitas...' : 'Cari pemohon atau nama barang...'"
           class="input-search"
         />
         <button v-if="searchQuery" class="clear-btn" @click="searchQuery = ''">✕</button>
@@ -86,14 +88,18 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, index) in filteredPeminjaman" :key="index" class="table-row">
+            <tr v-if="isLoadingPeminjaman">
+              <td colspan="7" class="text-center" style="padding: 30px;">Memuat data...</td>
+            </tr>
+
+            <tr v-for="item in filteredPeminjaman" :key="item.id" class="table-row" v-else>
               <td>
-                <strong class="text-dark">{{ item.pemohon }}</strong>
+                <strong class="text-dark">{{ item.peminjam?.name ?? '-' }}</strong>
               </td>
-              <td class="font-medium">{{ item.fasilitas }}</td>
-              <td>{{ item.tglPinjam }}</td>
-              <td>{{ item.tglKembali }}</td>
-              <td>{{ item.keperluan }}</td>
+              <td class="font-medium">{{ item.sarana?.nama_sarana ?? '-' }}</td>
+              <td>{{ item.tanggal_pinjam }}</td>
+              <td>{{ item.tanggal_kembali_rencana }}</td>
+              <td>{{ item.keperluan ?? '-' }}</td>
               <td class="text-center">
                 <span :class="['badge-status', getStatusClass(item.status)]">
                   {{ item.status }}
@@ -101,15 +107,15 @@
               </td>
               <td class="text-center">
                 <div v-if="item.status === 'Menunggu'" class="action-buttons">
-                  <button class="btn-approve" title="Setujui" @click="updateStatusPeminjaman(originalIndex(item, 'peminjaman'), 'Disetujui')">✓</button>
-                  <button class="btn-reject" title="Tolak" @click="updateStatusPeminjaman(originalIndex(item, 'peminjaman'), 'Ditolak')">✕</button>
+                  <button class="btn-approve" title="Setujui" @click="updateStatusPeminjaman(item.id, 'Disetujui')">✓</button>
+                  <button class="btn-reject" title="Tolak" @click="updateStatusPeminjaman(item.id, 'Ditolak')">✕</button>
                 </div>
                 <span v-else class="text-muted">-</span>
               </td>
             </tr>
 
             <!-- Empty State -->
-            <tr v-if="filteredPeminjaman.length === 0">
+            <tr v-if="!isLoadingPeminjaman && filteredPeminjaman.length === 0">
               <td colspan="7">
                 <div class="empty-state-box">
                   <div class="empty-icon">🔍</div>
@@ -139,14 +145,18 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, index) in filteredKebutuhan" :key="index" class="table-row">
+            <tr v-if="isLoadingKebutuhan">
+              <td colspan="7" class="text-center" style="padding: 30px;">Memuat data...</td>
+            </tr>
+
+            <tr v-for="item in filteredKebutuhan" :key="item.id" class="table-row" v-else>
               <td>
-                <strong class="text-dark">{{ item.pemohon }}</strong>
+                <strong class="text-dark">{{ item.pemohon?.name ?? '-' }}</strong>
               </td>
-              <td class="font-medium">{{ item.namaBarang }}</td>
+              <td class="font-medium">{{ item.nama_barang }}</td>
               <td>{{ item.jumlah }} unit</td>
-              <td>Rp {{ item.estimasi.toLocaleString('id-ID') }}</td>
-              <td>{{ item.alasan }}</td>
+              <td>Rp {{ Number(item.estimasi_biaya ?? 0).toLocaleString('id-ID') }}</td>
+              <td>{{ item.alasan ?? '-' }}</td>
               <td class="text-center">
                 <span :class="['badge-status', getStatusClass(item.status)]">
                   {{ item.status }}
@@ -154,15 +164,15 @@
               </td>
               <td class="text-center">
                 <div v-if="item.status === 'Menunggu'" class="action-buttons">
-                  <button class="btn-approve" title="Setujui" @click="updateStatusKebutuhan(originalIndex(item, 'kebutuhan'), 'Disetujui')">✓</button>
-                  <button class="btn-reject" title="Tolak" @click="updateStatusKebutuhan(originalIndex(item, 'kebutuhan'), 'Ditolak')">✕</button>
+                  <button class="btn-approve" title="Setujui" @click="updateStatusKebutuhan(item.id, 'Disetujui')">✓</button>
+                  <button class="btn-reject" title="Tolak" @click="updateStatusKebutuhan(item.id, 'Ditolak')">✕</button>
                 </div>
                 <span v-else class="text-muted">-</span>
               </td>
             </tr>
 
             <!-- Empty State -->
-            <tr v-if="filteredKebutuhan.length === 0">
+            <tr v-if="!isLoadingKebutuhan && filteredKebutuhan.length === 0">
               <td colspan="7">
                 <div class="empty-state-box">
                   <div class="empty-icon">🔍</div>
@@ -179,8 +189,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api'
 
 const router = useRouter()
 
@@ -190,21 +201,48 @@ const kembaliKeBeranda = () => {
 
 const activeTab = ref('peminjaman')
 const searchQuery = ref('')
+const errorMessage = ref('')
+const isLoadingPeminjaman = ref(false)
+const isLoadingKebutuhan = ref(false)
 
 // Reset search query when switching tabs
 watch(activeTab, () => {
   searchQuery.value = ''
 })
 
-const peminjamanList = ref([
-  { pemohon: 'Budi (Guru)', fasilitas: 'Proyektor Epson Lab 1', tglPinjam: '2026-09-03', tglKembali: '2026-09-03', keperluan: 'Presentasi Mengajar', status: 'Menunggu' },
-  { pemohon: 'Siti (Siswa)', fasilitas: 'Kamera DSLR Canon', tglPinjam: '2026-09-05', tglKembali: '2026-09-07', keperluan: 'Liputan Acara Sekolah', status: 'Disetujui' }
-])
+const peminjamanList = ref([])
+const kebutuhanList = ref([])
 
-const kebutuhanList = ref([
-  { pemohon: 'Ahmad (Teknisi)', namaBarang: 'Kabel UTP Cat6 (1 Roll)', jumlah: 1, estimasi: 1200000, alasan: 'Peremajaan jaringan internet Gedung B', status: 'Menunggu' },
-  { pemohon: 'Rina (Guru)', namaBarang: 'Marker Board Pastels', jumlah: 10, estimasi: 150000, alasan: 'Stok spidol kelas habis', status: 'Ditolak' }
-])
+const fetchPeminjaman = async () => {
+  isLoadingPeminjaman.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get('/peminjaman')
+    peminjamanList.value = response.data.data
+  } catch (error) {
+    errorMessage.value = 'Gagal memuat data peminjaman. Pastikan backend sedang berjalan.'
+  } finally {
+    isLoadingPeminjaman.value = false
+  }
+}
+
+const fetchKebutuhan = async () => {
+  isLoadingKebutuhan.value = true
+  errorMessage.value = ''
+  try {
+    const response = await api.get('/pengajuan-barang')
+    kebutuhanList.value = response.data.data
+  } catch (error) {
+    errorMessage.value = 'Gagal memuat data pengajuan barang. Pastikan backend sedang berjalan.'
+  } finally {
+    isLoadingKebutuhan.value = false
+  }
+}
+
+onMounted(() => {
+  fetchPeminjaman()
+  fetchKebutuhan()
+})
 
 // Total counts for stat cards
 const totalMenunggu = computed(() => {
@@ -217,9 +255,11 @@ const totalMenunggu = computed(() => {
 const filteredPeminjaman = computed(() => {
   return peminjamanList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    return item.pemohon.toLowerCase().includes(q) || 
-           item.fasilitas.toLowerCase().includes(q) ||
-           item.keperluan.toLowerCase().includes(q)
+    return (
+      (item.peminjam?.name ?? '').toLowerCase().includes(q) ||
+      (item.sarana?.nama_sarana ?? '').toLowerCase().includes(q) ||
+      (item.keperluan ?? '').toLowerCase().includes(q)
+    )
   })
 })
 
@@ -227,20 +267,13 @@ const filteredPeminjaman = computed(() => {
 const filteredKebutuhan = computed(() => {
   return kebutuhanList.value.filter(item => {
     const q = searchQuery.value.toLowerCase()
-    return item.pemohon.toLowerCase().includes(q) || 
-           item.namaBarang.toLowerCase().includes(q) ||
-           item.alasan.toLowerCase().includes(q)
+    return (
+      (item.pemohon?.name ?? '').toLowerCase().includes(q) ||
+      item.nama_barang.toLowerCase().includes(q) ||
+      (item.alasan ?? '').toLowerCase().includes(q)
+    )
   })
 })
-
-// Helper to get true index in original array for state mutation
-const originalIndex = (item, type) => {
-  if (type === 'peminjaman') {
-    return peminjamanList.value.findIndex(i => i === item)
-  } else {
-    return kebutuhanList.value.findIndex(i => i === item)
-  }
-}
 
 const getStatusClass = (status) => {
   if (status === 'Menunggu') return 'status-wait'
@@ -248,15 +281,29 @@ const getStatusClass = (status) => {
   return 'status-reject'
 }
 
-const updateStatusPeminjaman = (index, status) => {
-  if (index !== -1) {
-    peminjamanList.value[index].status = status
+const updateStatusPeminjaman = async (id, statusBaru) => {
+  const item = peminjamanList.value.find(i => i.id === id)
+  const statusLama = item?.status
+  if (item) item.status = statusBaru
+
+  try {
+    await api.patch(`/peminjaman/${id}/status`, { status: statusBaru })
+  } catch (error) {
+    if (item) item.status = statusLama
+    errorMessage.value = 'Gagal memperbarui status peminjaman.'
   }
 }
 
-const updateStatusKebutuhan = (index, status) => {
-  if (index !== -1) {
-    kebutuhanList.value[index].status = status
+const updateStatusKebutuhan = async (id, statusBaru) => {
+  const item = kebutuhanList.value.find(i => i.id === id)
+  const statusLama = item?.status
+  if (item) item.status = statusBaru
+
+  try {
+    await api.patch(`/pengajuan-barang/${id}/status`, { status: statusBaru })
+  } catch (error) {
+    if (item) item.status = statusLama
+    errorMessage.value = 'Gagal memperbarui status pengajuan barang.'
   }
 }
 </script>
@@ -268,6 +315,17 @@ const updateStatusKebutuhan = (index, status) => {
   padding: 40px 24px;
   box-sizing: border-box;
   animation: fadeIn 0.4s ease-out;
+}
+
+.error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 /* Posisi Tombol Kembali di Kiri */
