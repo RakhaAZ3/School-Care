@@ -1,69 +1,166 @@
 <template>
   <div class="auth-container">
-    <!-- Background Glow Ornaments -->
-    <div class="bg-glow-blob blob-1"></div>
-    <div class="bg-glow-blob blob-2"></div>
+    <div class="auth-glow glow-one"></div>
+    <div class="auth-glow glow-two"></div>
 
     <div class="auth-card">
-      <div class="auth-header">
-        <div class="brand-logo">🏫</div>
-        <h2>Daftar Akun <span class="text-primary">SchoolCare</span></h2>
-        <p>Buat akun baru untuk mulai menggunakan sistem inventaris.</p>
+
+      <!-- BRAND -->
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-school"></i>
+        </div>
+
+        <div>
+          <h1>SchoolCare</h1>
+          <span>Sistem Informasi Sarana & Prasarana</span>
+        </div>
       </div>
 
-      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+      <!-- HEADER -->
+      <div class="auth-header">
+        <h2>Buat Akun 👋</h2>
+        <p>Daftarkan akun untuk menggunakan layanan SchoolCare.</p>
+      </div>
 
-      <form @submit.prevent="handleRegister" class="auth-form">
+      <!-- ERROR -->
+      <div
+        v-if="errorMessage"
+        class="error-message"
+      >
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ errorMessage }}</span>
+      </div>
+
+      <!-- SUCCESS -->
+      <div
+        v-if="successMessage"
+        class="success-message"
+      >
+        <i class="fa-solid fa-circle-check"></i>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <!-- FORM -->
+      <form @submit.prevent="handleRegister">
+
+        <!-- NAMA -->
         <div class="form-group">
-          <label>Nama Lengkap & Gelar</label>
-          <input 
-            type="text" 
-            v-model="name" 
-            placeholder="contoh: Budi Santoso, S.Pd" 
-            required 
-          />
+          <label for="name">
+            Nama
+          </label>
+
+          <div class="input-wrapper">
+            <i class="fa-regular fa-user"></i>
+
+            <input
+              id="name"
+              v-model="name"
+              type="text"
+              placeholder="Masukkan nama"
+              required
+            />
+          </div>
         </div>
 
+        <!-- EMAIL -->
         <div class="form-group">
-          <label>No HP</label>
-          <input 
-            type="text" 
-            v-model="phone" 
-            placeholder="contoh: 081234567890" 
-            required 
-          />
+          <label for="email">
+            Email
+          </label>
+
+          <div class="input-wrapper">
+            <i class="fa-regular fa-envelope"></i>
+
+            <input
+              id="email"
+              v-model="email"
+              type="email"
+              placeholder="Masukkan email"
+              required
+            />
+          </div>
         </div>
 
+        <!-- PASSWORD -->
         <div class="form-group">
-          <label>Email Sekolah</label>
-          <input 
-            type="email" 
-            v-model="email" 
-            placeholder="contoh: budi@schoolcare.app" 
-            required 
-          />
+          <label for="password">
+            Password
+          </label>
+
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock"></i>
+
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              placeholder="Masukkan password"
+              required
+            />
+          </div>
         </div>
 
+        <!-- KONFIRMASI PASSWORD -->
         <div class="form-group">
-          <label>Kata Sandi</label>
-          <input 
-            type="password" 
-            v-model="password" 
-            placeholder="minimal 8 karakter" 
-            required 
-            minlength="8"
-          />
+          <label for="password_confirmation">
+            Konfirmasi Password
+          </label>
+
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock"></i>
+
+            <input
+              id="password_confirmation"
+              v-model="passwordConfirmation"
+              type="password"
+              placeholder="Ulangi password"
+              required
+            />
+          </div>
         </div>
 
-        <button type="submit" class="btn-submit" :disabled="isLoading">
-          {{ isLoading ? 'Memproses...' : 'Daftar Sekarang ✨' }}
+        <!-- BUTTON -->
+        <button
+          type="submit"
+          class="register-button"
+          :disabled="isLoading"
+        >
+          <span v-if="!isLoading">
+            <i class="fa-solid fa-user-plus"></i>
+            Daftar
+          </span>
+
+          <span v-else>
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Memproses...
+          </span>
         </button>
+
       </form>
 
-      <div class="auth-footer">
-        <p>Sudah punya akun? <router-link to="/login">Masuk di sini</router-link></p>
-        <p style="margin-top: 8px;"><router-link to="/" class="back-link">← Kembali ke Beranda</router-link></p>
+      <!-- LOGIN -->
+      <div class="login-link">
+        <span>Sudah punya akun?</span>
+
+        <button
+          type="button"
+          @click="router.push('/login')"
+        >
+          Login sekarang
+        </button>
       </div>
+
+      <!-- BACK -->
+      <button
+        class="back-button"
+        type="button"
+        @click="router.push('/')"
+      >
+        <i class="fa-solid fa-arrow-left"></i>
+        Kembali ke halaman utama
+      </button>
+
     </div>
   </div>
 </template>
@@ -74,43 +171,78 @@ import { useRouter } from 'vue-router'
 import api from '../../utils/api'
 
 const router = useRouter()
+
 const name = ref('')
-const phone = ref('') 
 const email = ref('')
 const password = ref('')
+const passwordConfirmation = ref('')
+
 const errorMessage = ref('')
+const successMessage = ref('')
 const isLoading = ref(false)
 
 const handleRegister = async () => {
   errorMessage.value = ''
+  successMessage.value = ''
+
+  if (
+    password.value !==
+    passwordConfirmation.value
+  ) {
+    errorMessage.value =
+      'Konfirmasi password tidak sama.'
+    return
+  }
+
   isLoading.value = true
 
   try {
-    const response = await api.post('/register', {
+    await api.post('/register', {
       name: name.value,
       email: email.value,
-      no_hp: phone.value,
       password: password.value,
-      // Form ini cuma punya 1 field password, jadi konfirmasinya
-      // disamakan otomatis (backend tetap wajib validasi "confirmed")
-      password_confirmation: password.value,
+      password_confirmation:
+        passwordConfirmation.value,
     })
 
-    localStorage.setItem('token', response.data.access_token)
-    localStorage.setItem('user', JSON.stringify(response.data.user))
+    successMessage.value =
+      'Registrasi berhasil. Silakan login.'
 
-    alert('Registrasi Berhasil! Silakan masuk menggunakan akun baru kamu.')
-    router.push('/login')
+    setTimeout(() => {
+      router.push('/login')
+    }, 1000)
+
   } catch (error) {
+
     if (error.response?.status === 422) {
-      // Error validasi dari Laravel, contoh: email sudah dipakai
-      const errors = error.response.data.errors
-      errorMessage.value = Object.values(errors).flat().join(' ')
+
+      const errors =
+        error.response.data?.errors
+
+      if (errors) {
+        const firstError =
+          Object.values(errors)[0]
+
+        errorMessage.value =
+          Array.isArray(firstError)
+            ? firstError[0]
+            : 'Data yang dimasukkan tidak valid.'
+      } else {
+        errorMessage.value =
+          'Data registrasi tidak valid.'
+      }
+
     } else if (error.request) {
-      errorMessage.value = 'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+
+      errorMessage.value =
+        'Tidak bisa terhubung ke server. Pastikan backend sedang berjalan.'
+
     } else {
-      errorMessage.value = 'Terjadi kesalahan, coba lagi.'
+
+      errorMessage.value =
+        'Terjadi kesalahan, coba lagi.'
     }
+
   } finally {
     isLoading.value = false
   }
@@ -118,152 +250,409 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
 .auth-container {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8fafc;
-  font-family: 'Plus Jakarta Sans', sans-serif;
   position: relative;
   overflow: hidden;
-  padding: 20px;
-}
 
-.bg-glow-blob {
-  position: absolute;
-  width: 450px;
-  height: 450px;
-  border-radius: 50%;
-  filter: blur(80px);
-  z-index: 0;
-  opacity: 0.15;
-  pointer-events: none;
-}
-.blob-1 { top: -100px; left: -100px; background: #2563eb; }
-.blob-2 { bottom: -100px; right: -100px; background: #7c3aed; }
-
-.auth-card {
-  background: white;
-  padding: 40px;
-  border-radius: 24px;
-  border: 1px solid #e2e8f0;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.05);
-  position: relative;
-  z-index: 10;
-  text-align: left;
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.brand-logo {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  width: 54px;
-  height: 54px;
-  margin: 0 auto 16px auto;
-  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+
+  padding: 30px 20px;
+
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(37, 99, 235, 0.08),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at bottom right,
+      rgba(124, 58, 237, 0.08),
+      transparent 35%
+    ),
+    #f8fafc;
+
+  font-family: 'Inter', sans-serif;
 }
 
-.auth-header h2 {
-  margin: 0 0 6px 0;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-.text-primary { color: #2563eb; }
-.auth-header p { margin: 0; color: #64748b; font-size: 0.9rem; }
+.auth-glow {
+  position: absolute;
 
-.error-message {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  margin-bottom: 20px;
-  text-align: center;
+  border-radius: 50%;
+
+  filter: blur(80px);
+
+  pointer-events: none;
 }
 
-.auth-form {
+.glow-one {
+  width: 260px;
+  height: 260px;
+
+  background: rgba(37, 99, 235, 0.12);
+
+  top: -80px;
+  left: -80px;
+}
+
+.glow-two {
+  width: 280px;
+  height: 280px;
+
+  background: rgba(124, 58, 237, 0.12);
+
+  right: -100px;
+  bottom: -100px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+
+  position: relative;
+  z-index: 2;
+
+  background: rgba(255, 255, 255, 0.96);
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 24px;
+
+  padding: 38px;
+
+  box-shadow:
+    0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+.brand {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  align-items: center;
+
+  gap: 13px;
+
+  margin-bottom: 32px;
 }
 
-.form-group {
+.brand-icon {
+  width: 48px;
+  height: 48px;
+
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  align-items: center;
+  justify-content: center;
 
-.form-group label {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #334155;
-}
+  border-radius: 14px;
 
-.form-group input {
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  font-size: 0.95rem;
-  outline: none;
-  transition: all 0.2s;
-  background: #f8fafc;
-}
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #7c3aed
+    );
 
-.form-group input:focus {
-  border-color: #2563eb;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.btn-submit {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
-  border: none;
-  padding: 14px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-  transition: all 0.25s;
-  margin-top: 10px;
+
+  font-size: 21px;
 }
 
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
+.brand h1 {
+  margin: 0;
+
+  font-family:
+    'Plus Jakarta Sans',
+    sans-serif;
+
+  font-size: 21px;
+
+  font-weight: 800;
+
+  color: #111827;
 }
 
-.btn-submit:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
+.brand span {
+  display: block;
 
-.auth-footer {
-  margin-top: 25px;
-  text-align: center;
-  font-size: 0.9rem;
+  margin-top: 3px;
+
+  font-size: 11px;
+
   color: #64748b;
 }
 
-.auth-footer a {
-  color: #2563eb;
-  font-weight: 700;
-  text-decoration: none;
+.auth-header {
+  margin-bottom: 23px;
 }
-.auth-footer a:hover { text-decoration: underline; }
-.back-link { color: #64748b !important; font-size: 0.85rem; }
+
+.auth-header h2 {
+  margin: 0 0 8px;
+
+  font-family:
+    'Plus Jakarta Sans',
+    sans-serif;
+
+  font-size: 27px;
+
+  font-weight: 800;
+
+  color: #111827;
+}
+
+.auth-header p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+.error-message,
+.success-message {
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  padding: 12px 14px;
+
+  margin-bottom: 18px;
+
+  border-radius: 12px;
+
+  font-size: 13px;
+}
+
+.error-message {
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #dc2626;
+}
+
+.success-message {
+  background: #f0fdf4;
+
+  border: 1px solid #bbf7d0;
+
+  color: #16a34a;
+}
+
+.form-group {
+  margin-bottom: 17px;
+}
+
+.form-group label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #374151;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper i {
+  position: absolute;
+
+  left: 15px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color: #94a3b8;
+
+  font-size: 14px;
+}
+
+.input-wrapper input {
+  width: 100%;
+  height: 48px;
+
+  padding:
+    0
+    15px
+    0
+    43px;
+
+  border:
+    1px solid
+    #e2e8f0;
+
+  border-radius: 12px;
+
+  outline: none;
+
+  color: #1e293b;
+
+  background: white;
+
+  font-family:
+    'Inter',
+    sans-serif;
+
+  font-size: 13px;
+
+  transition: 0.2s;
+}
+
+.input-wrapper input:focus {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.08);
+}
+
+.input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.register-button {
+  width: 100%;
+  height: 49px;
+
+  border: none;
+
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2563eb,
+      #7c3aed
+    );
+
+  color: white;
+
+  font-family:
+    'Inter',
+    sans-serif;
+
+  font-size: 14px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.register-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 10px 25px
+    rgba(37, 99, 235, 0.2);
+}
+
+.register-button:disabled {
+  opacity: 0.7;
+
+  cursor: not-allowed;
+}
+
+.register-button i {
+  margin-right: 7px;
+}
+
+.login-link {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 5px;
+
+  margin-top: 20px;
+
+  font-size: 13px;
+
+  color: #64748b;
+}
+
+.login-link button {
+  padding: 0;
+
+  border: none;
+
+  background: none;
+
+  color: #2563eb;
+
+  font-family: inherit;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.login-link button:hover {
+  text-decoration: underline;
+}
+
+.back-button {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  width: 100%;
+
+  margin-top: 18px;
+
+  padding-top: 17px;
+
+  border: none;
+
+  border-top:
+    1px solid
+    #f1f5f9;
+
+  background: none;
+
+  color: #64748b;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+.back-button:hover {
+  color: #2563eb;
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 28px 22px;
+
+    border-radius: 20px;
+  }
+
+  .auth-header h2 {
+    font-size: 23px;
+  }
+}
 </style>
