@@ -13,45 +13,27 @@ class LaporanKerusakan extends Model
     protected $table = 'laporan_kerusakan';
 
     protected $fillable = [
+        'judul',
+        'deskripsi',
         'sarana_id',
+        'ruangan_id',
         'pelapor_id',
-        'ditangani_oleh',
-        'tanggal_lapor',
-        'deskripsi_kerusakan',
-        'tingkat_kerusakan',
+        'prioritas',
         'status',
-        'tindak_lanjut',
-        'foto',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'tanggal_lapor' => 'date',
-        ];
-    }
-
-    /**
-     * Relasi: Laporan ini untuk satu Sarana
-     */
     public function sarana(): BelongsTo
     {
         return $this->belongsTo(Sarana::class, 'sarana_id');
     }
 
-    /**
-     * Relasi: Laporan dibuat oleh satu User (pelapor)
-     */
+    public function ruangan(): BelongsTo
+    {
+        return $this->belongsTo(Ruangan::class, 'ruangan_id');
+    }
+
     public function pelapor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pelapor_id');
-    }
-
-    /**
-     * Relasi: Laporan ditangani oleh satu User (petugas/admin)
-     */
-    public function penanganan(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'ditangani_oleh');
     }
 }

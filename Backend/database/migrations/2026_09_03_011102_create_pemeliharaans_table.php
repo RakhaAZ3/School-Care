@@ -11,12 +11,12 @@ return new class extends Migration
         Schema::create('pemeliharaan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sarana_id')->constrained('sarana')->cascadeOnDelete();
-            $table->foreignId('petugas_id')->constrained('users')->cascadeOnDelete();
-            $table->date('tanggal_pemeliharaan');
-            $table->enum('jenis_pemeliharaan', ['rutin', 'perbaikan']);
+            $table->string('jenis_perawatan');
+            $table->string('teknisi');
             $table->decimal('biaya', 15, 2)->nullable();
-            $table->enum('status', ['dijadwalkan', 'proses', 'selesai'])->default('dijadwalkan');
-            $table->text('keterangan')->nullable();
+            $table->date('tanggal_pemeliharaan');
+            $table->date('pemeriksaan_berikutnya')->nullable();
+            $table->enum('status', ['Proses', 'Selesai'])->default('Selesai');
             $table->timestamps();
         });
     }

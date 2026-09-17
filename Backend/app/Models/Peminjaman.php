@@ -13,16 +13,12 @@ class Peminjaman extends Model
     protected $table = 'peminjaman';
 
     protected $fillable = [
-        'sarana_id',
         'peminjam_id',
-        'disetujui_oleh',
-        'jumlah_pinjam',
+        'sarana_id',
         'tanggal_pinjam',
         'tanggal_kembali_rencana',
-        'tanggal_kembali_aktual',
-        'status',
         'keperluan',
-        'catatan',
+        'status',
     ];
 
     protected function casts(): array
@@ -30,32 +26,16 @@ class Peminjaman extends Model
         return [
             'tanggal_pinjam' => 'date',
             'tanggal_kembali_rencana' => 'date',
-            'tanggal_kembali_aktual' => 'date',
-            'jumlah_pinjam' => 'integer',
         ];
     }
 
-    /**
-     * Relasi: Peminjaman ini untuk satu Sarana
-     */
-    public function sarana(): BelongsTo
-    {
-        return $this->belongsTo(Sarana::class, 'sarana_id');
-    }
-
-    /**
-     * Relasi: Peminjaman dilakukan oleh satu User (peminjam)
-     */
     public function peminjam(): BelongsTo
     {
         return $this->belongsTo(User::class, 'peminjam_id');
     }
 
-    /**
-     * Relasi: Peminjaman disetujui oleh satu User (petugas/admin)
-     */
-    public function penyetuju(): BelongsTo
+    public function sarana(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'disetujui_oleh');
+        return $this->belongsTo(Sarana::class, 'sarana_id');
     }
 }
