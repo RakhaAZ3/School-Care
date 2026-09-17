@@ -46,23 +46,21 @@ class User extends Authenticatable
         return $this->hasMany(Peminjaman::class, 'peminjam_id');
     }
 
-    public function pemeliharaan(): HasMany
-    {
-        return $this->hasMany(Pemeliharaan::class, 'petugas_id');
-    }
-
     public function laporanKerusakan(): HasMany
     {
         return $this->hasMany(LaporanKerusakan::class, 'pelapor_id');
     }
 
+    /**
+     * Helper cek role — dipakai di Middleware / Blade / Policy
+     */
     public function isAdmin(): bool
     {
         return $this->role?->name === 'admin';
     }
 
-    public function isGuru(): bool
+    public function isPengguna(): bool
     {
-        return $this->role?->name === 'guru';
+        return $this->role?->name === 'pengguna';
     }
 }

@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Peminjaman;
+use App\Models\PengajuanBarang;
 use Exception;
 use Illuminate\Http\Request;
 
-class PeminjamanController extends Controller
+class PengajuanBarangController extends Controller
 {
     public function index()
     {
         try {
-            $peminjaman = Peminjaman::with(['peminjam', 'sarana'])->latest()->get();
+            $pengajuan = PengajuanBarang::with(['pemohon'])->latest()->get();
             return response()->json([
                 'status' => true,
-                'message' => 'Data peminjaman berhasil diambil.',
-                'data' => $peminjaman
+                'message' => 'Data pengajuan barang berhasil diambil.',
+                'data' => $pengajuan
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -29,25 +29,25 @@ class PeminjamanController extends Controller
     {
         try {
             $request->validate([
-                'sarana_id' => 'required|exists:sarana,id',
-                'tanggal_pinjam' => 'required|date',
-                'tanggal_kembali_rencana' => 'required|date|after_or_equal:tanggal_pinjam',
-                'keperluan' => 'nullable|string',
+                'nama_barang' => 'required|string',
+                'jumlah' => 'required|integer|min:1',
+                'estimasi_biaya' => 'nullable|numeric',
+                'alasan' => 'nullable|string',
             ]);
 
-            $peminjaman = new Peminjaman();
-            $peminjaman->peminjam_id = $request->user()->id;
-            $peminjaman->sarana_id = $request->sarana_id;
-            $peminjaman->tanggal_pinjam = $request->tanggal_pinjam;
-            $peminjaman->tanggal_kembali_rencana = $request->tanggal_kembali_rencana;
-            $peminjaman->keperluan = $request->keperluan;
-            $peminjaman->status = 'Menunggu';
-            $peminjaman->save();
+            $pengajuan = new PengajuanBarang();
+            $pengajuan->pemohon_id = $request->user()->id;
+            $pengajuan->nama_barang = $request->nama_barang;
+            $pengajuan->jumlah = $request->jumlah;
+            $pengajuan->estimasi_biaya = $request->estimasi_biaya;
+            $pengajuan->alasan = $request->alasan;
+            $pengajuan->status = 'Menunggu';
+            $pengajuan->save();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Pengajuan peminjaman berhasil dikirim.',
-                'data' => $peminjaman->load(['peminjam', 'sarana'])
+                'message' => 'Pengajuan barang berhasil dikirim.',
+                'data' => $pengajuan->load('pemohon')
             ], 201);
         } catch (Exception $e) {
             return response()->json([
@@ -60,18 +60,18 @@ class PeminjamanController extends Controller
     public function show($id)
     {
         try {
-            $peminjaman = Peminjaman::with(['peminjam', 'sarana'])->find($id);
-            if (!$peminjaman) {
+            $pengajuan = PengajuanBarang::with(['pemohon'])->find($id);
+            if (!$pengajuan) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data peminjaman tidak ditemukan.'
+                    'message' => 'Data pengajuan tidak ditemukan.'
                 ], 404);
             }
 
             return response()->json([
                 'status' => true,
-                'message' => 'Data peminjaman berhasil diambil.',
-                'data' => $peminjaman
+                'message' => 'Data pengajuan berhasil diambil.',
+                'data' => $pengajuan
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -88,11 +88,11 @@ class PeminjamanController extends Controller
     public function updateStatus(Request $request, $id)
     {
         try {
-            $peminjaman = Peminjaman::find($id);
-            if (!$peminjaman) {
+            $pengajuan = PengajuanBarang::find($id);
+            if (!$pengajuan) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data peminjaman tidak ditemukan.'
+                    'message' => 'Data pengajuan tidak ditemukan.'
                 ], 404);
             }
 
@@ -100,13 +100,13 @@ class PeminjamanController extends Controller
                 'status' => 'required|in:Disetujui,Ditolak',
             ]);
 
-            $peminjaman->status = $request->status;
-            $peminjaman->save();
+            $pengajuan->status = $request->status;
+            $pengajuan->save();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Status peminjaman berhasil diperbarui.',
-                'data' => $peminjaman->load(['peminjam', 'sarana'])
+                'message' => 'Status pengajuan berhasil diperbarui.',
+                'data' => $pengajuan->load('pemohon')
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -119,19 +119,19 @@ class PeminjamanController extends Controller
     public function destroy($id)
     {
         try {
-            $peminjaman = Peminjaman::find($id);
-            if (!$peminjaman) {
+            $pengajuan = PengajuanBarang::find($id);
+            if (!$pengajuan) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Data peminjaman tidak ditemukan.'
+                    'message' => 'Data pengajuan tidak ditemukan.'
                 ], 404);
             }
 
-            $peminjaman->delete();
+            $pengajuan->delete();
 
             return response()->json([
                 'status' => true,
-                'message' => 'Data peminjaman berhasil dihapus.'
+                'message' => 'Data pengajuan berhasil dihapus.'
             ], 200);
         } catch (Exception $e) {
             return response()->json([

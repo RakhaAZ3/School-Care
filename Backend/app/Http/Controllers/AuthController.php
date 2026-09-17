@@ -6,7 +6,6 @@ use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -15,8 +14,9 @@ class AuthController extends Controller
 {
     /**
      * Registrasi user baru.
-     * Default role otomatis "guru" — role "admin" hanya dibuat manual lewat seeder/tinker
-     * demi keamanan (supaya orang tidak bisa daftar sendiri jadi admin).
+     * Default role otomatis "pengguna" — role "admin" hanya dibuat manual
+     * lewat seeder/tinker demi keamanan (supaya orang tidak bisa daftar
+     * sendiri jadi admin).
      */
     public function register(Request $request): JsonResponse
     {
@@ -34,10 +34,10 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $roleGuru = Role::where('name', 'guru')->first();
+        $rolePengguna = Role::where('name', 'pengguna')->first();
 
         $user = User::create([
-            'role_id' => $roleGuru?->id,
+            'role_id' => $rolePengguna?->id,
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -54,9 +54,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Login, mengembalikan token Sanctum.
-     */
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -89,9 +86,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout — hapus token yang sedang dipakai (bukan semua token/device).
-     */
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -101,9 +95,6 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Ambil data user yang sedang login (dipakai frontend buat cek sesi).
-     */
     public function me(Request $request): JsonResponse
     {
         return response()->json([

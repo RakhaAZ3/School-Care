@@ -10,15 +10,13 @@ return new class extends Migration
     {
         Schema::create('laporan_kerusakan', function (Blueprint $table) {
             $table->id();
+            $table->string('judul');
+            $table->text('deskripsi');
             $table->foreignId('sarana_id')->constrained('sarana')->cascadeOnDelete();
+            $table->foreignId('ruangan_id')->constrained('ruangan')->cascadeOnDelete();
             $table->foreignId('pelapor_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('ditangani_oleh')->nullable()->constrained('users')->nullOnDelete();
-            $table->date('tanggal_lapor');
-            $table->text('deskripsi_kerusakan');
-            $table->enum('tingkat_kerusakan', ['ringan', 'sedang', 'berat']);
-            $table->enum('status', ['menunggu', 'diproses', 'selesai', 'ditolak'])->default('menunggu');
-            $table->text('tindak_lanjut')->nullable();
-            $table->string('foto')->nullable();
+            $table->enum('prioritas', ['Rendah', 'Sedang', 'Tinggi'])->default('Sedang');
+            $table->enum('status', ['Menunggu', 'Diverifikasi', 'Diproses', 'Selesai'])->default('Menunggu');
             $table->timestamps();
         });
     }
