@@ -1,11 +1,6 @@
 <template>
   <div class="page-container">
     <!-- Baris Navigasi Atas: Tombol Kembali di Kiri -->
-    <div class="page-header-nav">
-      <button class="btn-back" @click="kembaliKeBeranda">
-        <span>←</span> Kembali ke Beranda
-      </button>
-    </div>
 
     <!-- Content Header: Teks Rata Tengah -->
     <header class="content-header-center">

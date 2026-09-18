@@ -29,26 +29,40 @@
         <!-- ================= DASHBOARD ================= -->
         <section v-if="currentTab === 'dashboard'" class="dashboard-page">
 
+          <!-- HEADER / JUDUL DIPERBARUI LEBIH ESTETIK -->
           <div class="welcome-section">
-            <div>
-              <span class="eyebrow">SCHOOLCARE ADMIN</span>
+            <div class="welcome-text-wrapper">
+              <div class="badge-pill">
+                <span class="pulse-dot"></span>
+                <span>Administrator Panel</span>
+              </div>
 
               <h1>
-                Dashboard
+                Dashboard Utama <span class="wave-emoji">👋</span>
               </h1>
 
               <p>
-                Kelola sarana dan prasarana sekolah dengan lebih mudah.
+                Pantau seluruh inventaris, kelola ruangan, dan tinjau laporan fasilitas sekolah dalam satu kendali terpusat.
               </p>
             </div>
 
             <div class="date-card">
-              <i class="fa-regular fa-calendar"></i>
-              <span>{{ currentDate }}</span>
+              <div class="date-icon-box">
+                <i class="fa-regular fa-calendar-days"></i>
+              </div>
+              <div class="date-info">
+                <small>Hari Ini</small>
+                <span>{{ currentDate }}</span>
+              </div>
             </div>
           </div>
 
-          <!-- STATISTIK -->
+          <!-- LOADING STATE / ERROR BANNER -->
+          <div v-if="isLoading" class="alert-banner loading">
+            <i class="fa-solid fa-spinner fa-spin"></i> Sinkronisasi data dengan server...
+          </div>
+
+          <!-- STATISTIK (Terhubung ke Data API) -->
           <div class="stats-grid">
 
             <div class="stat-card">
@@ -242,7 +256,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 import Sidebar from '../components/Sidebar.vue'
@@ -253,24 +267,88 @@ const router = useRouter()
 const route = useRoute()
 
 /* =========================
-   SIDEBAR
+   STATE KONTROL & API
 ========================= */
-
 const isCollapsed = ref(false)
+const isLoading = ref(false)
 
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
+/* =========================
+   SUMBER DATA DINAMIS (API READY)
+========================= */
+const roomsList = ref([])
+const facilitiesList = ref([])
+const pengajuanList = ref([])
+const maintenanceList = ref([])
+
+// Fungsi untuk menarik data dari Backend API
+const fetchDashboardData = async () => {
+  isLoading.value = true
+  try {
+    // TIPS: Ganti URL di bawah ini dengan base URL backend kamu (misal: 'http://localhost:8000/api')
+    // const API_BASE = 'http://localhost:5000/api'
+    
+    // Karena backend belum aktif, kita sediakan fallback data aman agar aplikasi tidak error/blank
+    // Nanti tinggal uncomment fetch di bawah jika backend sudah siap:
+    /*
+    const [resRooms, resFacilities, resPengajuan, resMaintenance] = await Promise.all([
+      fetch(`${API_BASE}/rooms`).then(res => res.json()),
+      fetch(`${API_BASE}/facilities`).then(res => res.json()),
+      fetch(`${API_BASE}/submissions`).then(res => res.json()),
+      fetch(`${API_BASE}/maintenance`).then(res => res.json()),
+    ])
+
+    roomsList.value = resRooms.data || []
+    facilitiesList.value = resFacilities.data || []
+    pengajuanList.value = resPengajuan.data || []
+    maintenanceList.value = resMaintenance.data || []
+    */
+
+    // --- FALLBACK MOCK DATA SEMENTARA (Akan otomatis diganti data API nantinya) ---
+    roomsList.value = [
+      { id: 1, code: 'R-01', name: 'Lab Komputer 1', capacity: 30, location: 'Gedung A Lt. 2', status: 'Tersedia' },
+      { id: 2, code: 'R-02', name: 'Ruang Multimedia', capacity: 50, location: 'Gedung B Lt. 1', status: 'Dipakai' },
+      { id: 3, code: 'R-03', name: 'Aula Utama', capacity: 200, location: 'Gedung Utama', status: 'Tersedia' },
+      { id: 4, code: 'R-04', name: 'Lab RPL', capacity: 36, location: 'Gedung A Lt. 3', status: 'Tersedia' }
+    ]
+
+    facilitiesList.value = [
+      { id: 1, name: 'Proyektor Epson EB-X400', category: 'Elektronik', total: 15, good: 14, broken: 1 },
+      { id: 2, name: 'Laptop Core i5 Lenovo', category: 'Komputer', total: 40, good: 38, broken: 2 },
+      { id: 3, name: 'Meja Siswa Ergonomis', category: 'Mebel', total: 300, good: 295, broken: 5 },
+      { id: 4, name: 'Kursi Siswa', category: 'Mebel', total: 320, good: 314, broken: 6 }
+    ]
+
+    pengajuanList.value = [
+      // Jika data kosong atau status != 'Pending', pendingCount otomatis 0
+    ]
+
+    maintenanceList.value = [
+      { id: 1, unit: 'AC Ruang Kelas 10-A', technician: 'Pak Joko (Teknisi)', estimate: '18 Sep 2026', progress: 'Penggantian Freon' },
+      { id: 2, unit: 'Proyektor Lab 2', technician: 'Pak Rudi', estimate: '16 Sep 2026', progress: 'Pengecekan Lampu' },
+      { id: 3, unit: 'Pintu Lab Komputer', technician: 'Pak Andi', estimate: '20 Sep 2026', progress: 'Penggantian Kunci' }
+    ]
+
+  } catch (error) {
+    console.error('Gagal mengambil data dari server backend:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Panggil fungsi API saat komponen dimuat (Mounted)
+onMounted(() => {
+  fetchDashboardData()
+})
 
 /* =========================
-   CURRENT TAB
+   CURRENT TAB & ROUTING
 ========================= */
-
 const currentTab = computed(() => {
-
   const routeName = route.name
-
   const menuMap = {
     AdminDashboardHome: 'dashboard',
     AdminRuangan: 'ruangan',
@@ -280,17 +358,10 @@ const currentTab = computed(() => {
     AdminLaporan: 'laporan',
     AdminMaintenance: 'maintenance'
   }
-
   return menuMap[routeName] || 'dashboard'
 })
 
-
-/* =========================
-   PAGE TITLE
-========================= */
-
 const pageTitle = computed(() => {
-
   const titles = {
     dashboard: 'Dashboard',
     ruangan: 'Manajemen Ruangan',
@@ -300,193 +371,46 @@ const pageTitle = computed(() => {
     laporan: 'Laporan Kerusakan',
     maintenance: 'Maintenance & Perbaikan'
   }
-
   return titles[currentTab.value] || 'Dashboard'
 })
 
-
 /* =========================
-   DATA
+   COMPUTED LOGIC (Dihitung Otomatis dari API)
 ========================= */
-
-const roomsList = ref([
-  {
-    id: 1,
-    code: 'R-01',
-    name: 'Lab Komputer 1',
-    capacity: 30,
-    location: 'Gedung A Lt. 2',
-    status: 'Tersedia'
-  },
-  {
-    id: 2,
-    code: 'R-02',
-    name: 'Ruang Multimedia',
-    capacity: 50,
-    location: 'Gedung B Lt. 1',
-    status: 'Dipakai'
-  },
-  {
-    id: 3,
-    code: 'R-03',
-    name: 'Aula Utama',
-    capacity: 200,
-    location: 'Gedung Utama',
-    status: 'Tersedia'
-  },
-  {
-    id: 4,
-    code: 'R-04',
-    name: 'Lab RPL',
-    capacity: 36,
-    location: 'Gedung A Lt. 3',
-    status: 'Tersedia'
-  }
-])
-
-
-const facilitiesList = ref([
-  {
-    id: 1,
-    name: 'Proyektor Epson EB-X400',
-    category: 'Elektronik',
-    total: 15,
-    good: 14,
-    broken: 1
-  },
-  {
-    id: 2,
-    name: 'Laptop Core i5 Lenovo',
-    category: 'Komputer',
-    total: 40,
-    good: 38,
-    broken: 2
-  },
-  {
-    id: 3,
-    name: 'Meja Siswa Ergonomis',
-    category: 'Mebel',
-    total: 300,
-    good: 295,
-    broken: 5
-  },
-  {
-    id: 4,
-    name: 'Kursi Siswa',
-    category: 'Mebel',
-    total: 320,
-    good: 314,
-    broken: 6
-  }
-])
-
-
-const pengajuanList = ref([])
-
-
-const maintenanceList = ref([
-  {
-    id: 1,
-    unit: 'AC Ruang Kelas 10-A',
-    technician: 'Pak Joko (Teknisi)',
-    estimate: '18 Sep 2026',
-    progress: 'Penggantian Freon'
-  },
-  {
-    id: 2,
-    unit: 'Proyektor Lab 2',
-    technician: 'Pak Rudi',
-    estimate: '16 Sep 2026',
-    progress: 'Pengecekan Lampu'
-  },
-  {
-    id: 3,
-    unit: 'Pintu Lab Komputer',
-    technician: 'Pak Andi',
-    estimate: '20 Sep 2026',
-    progress: 'Penggantian Kunci'
-  }
-])
-
-
-/* =========================
-   COMPUTED
-========================= */
-
 const totalFacilities = computed(() => {
-
-  return facilitiesList.value.reduce(
-    (total, item) => total + item.total,
-    0
-  )
-
+  return facilitiesList.value.reduce((total, item) => total + (item.total || 0), 0)
 })
-
 
 const totalGood = computed(() => {
-
-  return facilitiesList.value.reduce(
-    (total, item) => total + item.good,
-    0
-  )
-
+  return facilitiesList.value.reduce((total, item) => total + (item.good || 0), 0)
 })
-
 
 const totalBroken = computed(() => {
-
-  return facilitiesList.value.reduce(
-    (total, item) => total + item.broken,
-    0
-  )
-
+  return facilitiesList.value.reduce((total, item) => total + (item.broken || 0), 0)
 })
-
 
 const goodPercentage = computed(() => {
-
-  if (totalFacilities.value === 0) {
-    return 0
-  }
-
-  return Math.round(
-    (totalGood.value / totalFacilities.value) * 100
-  )
-
+  if (totalFacilities.value === 0) return 0
+  return Math.round((totalGood.value / totalFacilities.value) * 100)
 })
-
 
 const pendingCount = computed(() => {
-
-  return pengajuanList.value.filter(
-    item => item.status === 'Pending'
-  ).length
-
+  return pengajuanList.value.filter(item => item.status === 'Pending').length
 })
-
 
 const currentDate = computed(() => {
-
   const date = new Date()
-
-  return date.toLocaleDateString(
-    'id-ID',
-    {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
-    }
-  )
-
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
 })
 
-
 /* =========================
-   NAVIGATION
+   NAVIGASI & AUTH
 ========================= */
-
 const changeTab = (tab) => {
-
   const routes = {
     dashboard: '/admin/dashboard',
     ruangan: '/admin/ruangan',
@@ -496,33 +420,20 @@ const changeTab = (tab) => {
     laporan: '/admin/laporan',
     maintenance: '/admin/maintenance'
   }
-
   if (routes[tab]) {
     router.push(routes[tab])
   }
-
 }
 
-
 const handleLogout = () => {
-
-  const confirmed = confirm(
-    'Keluar dari panel administrator?'
-  )
-
-  if (!confirmed) {
-    return
-  }
-
+  const confirmed = confirm('Keluar dari panel administrator?')
+  if (!confirmed) return
   localStorage.removeItem('isLoggedIn')
-
   router.push('/login')
-
 }
 </script>
 
 <style scoped>
-
 * {
   box-sizing: border-box;
 }
@@ -531,10 +442,7 @@ const handleLogout = () => {
   min-height: 100vh;
   background: #f8fafc;
   color: #0f172a;
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
 }
 
 .main-area {
@@ -552,64 +460,152 @@ const handleLogout = () => {
   padding: 28px;
 }
 
+.alert-banner.loading {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-/* =========================
-   WELCOME
-========================= */
-
+/* =========================================
+   REDESIGNED WELCOME / HEADER SECTION
+========================================= */
 .welcome-section {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  padding: 28px 32px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
-.eyebrow,
-.card-label {
-  display: block;
-  margin-bottom: 7px;
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
   color: #2563eb;
-  font-size: .65rem;
-  font-weight: 800;
-  letter-spacing: .12em;
+  padding: 5px 12px;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
 }
 
-.welcome-section h1 {
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  background: #2563eb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 rgba(37, 99, 235, 0.4);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+.welcome-text-wrapper h1 {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 1.85rem;
   font-weight: 800;
-  letter-spacing: -.04em;
+  color: #0f172a;
+  letter-spacing: -.03em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.welcome-section p {
-  margin: 7px 0 0;
+.wave-emoji {
+  font-size: 1.6rem;
+  animation: wave 1.8s infinite;
+  transform-origin: 70% 70%;
+  display: inline-block;
+}
+
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+  60% { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.welcome-text-wrapper p {
+  margin: 8px 0 0;
   color: #64748b;
-  font-size: .82rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 600px;
 }
 
 .date-card {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 11px 15px;
-  background: #fff;
+  gap: 14px;
+  padding: 14px 18px;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  color: #64748b;
-  font-size: .72rem;
-  font-weight: 600;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.02);
+  flex-shrink: 0;
 }
 
-.date-card i {
+.date-icon-box {
+  width: 42px;
+  height: 42px;
+  background: #eff6ff;
   color: #2563eb;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
 }
 
+.date-info small {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
 
-/* =========================
-   STATS
-========================= */
+.date-info span {
+  display: block;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
 
+.card-label {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a3b8;
+  font-size: .55rem;
+}
+
+/* STATS GRID */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -640,28 +636,10 @@ const handleLogout = () => {
   font-size: 1rem;
 }
 
-.stat-icon.blue,
-.quick-icon.blue {
-  background: #eff6ff;
-  color: #2563eb;
-}
-
-.stat-icon.purple,
-.quick-icon.purple {
-  background: #f5f3ff;
-  color: #7c3aed;
-}
-
-.stat-icon.orange,
-.quick-icon.orange {
-  background: #fff7ed;
-  color: #ea580c;
-}
-
-.stat-icon.green {
-  background: #f0fdf4;
-  color: #16a34a;
-}
+.stat-icon.blue, .quick-icon.blue { background: #eff6ff; color: #2563eb; }
+.stat-icon.purple, .quick-icon.purple { background: #f5f3ff; color: #7c3aed; }
+.stat-icon.orange, .quick-icon.orange { background: #fff7ed; color: #ea580c; }
+.stat-icon.green { background: #f0fdf4; color: #16a34a; }
 
 .stat-card span {
   display: block;
@@ -677,11 +655,7 @@ const handleLogout = () => {
   font-weight: 800;
 }
 
-
-/* =========================
-   DASHBOARD GRID
-========================= */
-
+/* DASHBOARD GRID */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -709,17 +683,7 @@ const handleLogout = () => {
   font-weight: 800;
 }
 
-.card-label {
-  margin-bottom: 4px;
-  color: #94a3b8;
-  font-size: .55rem;
-}
-
-
-/* =========================
-   CONDITION
-========================= */
-
+/* CONDITION */
 .condition-percent {
   color: #16a34a;
   font-size: 1.3rem;
@@ -738,11 +702,7 @@ const handleLogout = () => {
 .condition-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    #2563eb,
-    #7c3aed
-  );
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
 }
 
 .condition-info {
@@ -761,32 +721,13 @@ const handleLogout = () => {
   height: 9px;
   border-radius: 50%;
 }
+.dot.good { background: #22c55e; }
+.dot.broken { background: #ef4444; }
 
-.dot.good {
-  background: #22c55e;
-}
+.condition-info strong { display: block; font-size: .9rem; }
+.condition-info small { display: block; margin-top: 2px; color: #94a3b8; font-size: .62rem; }
 
-.dot.broken {
-  background: #ef4444;
-}
-
-.condition-info strong {
-  display: block;
-  font-size: .9rem;
-}
-
-.condition-info small {
-  display: block;
-  margin-top: 2px;
-  color: #94a3b8;
-  font-size: .62rem;
-}
-
-
-/* =========================
-   QUICK ACTION
-========================= */
-
+/* QUICK ACTION */
 .quick-actions {
   display: grid;
   gap: 8px;
@@ -822,82 +763,27 @@ const handleLogout = () => {
   font-size: .8rem;
 }
 
-.quick-icon.red {
-  background: #fef2f2;
-  color: #dc2626;
-}
+.quick-icon.red { background: #fef2f2; color: #dc2626; }
+.quick-actions button div { flex: 1; }
+.quick-actions strong { display: block; color: #334155; font-size: .72rem; font-weight: 800; }
+.quick-actions small { display: block; margin-top: 2px; color: #94a3b8; font-size: .58rem; }
+.arrow { color: #cbd5e1; font-size: .6rem; }
 
-.quick-actions button div {
-  flex: 1;
-}
-
-.quick-actions strong {
-  display: block;
-  color: #334155;
-  font-size: .72rem;
-  font-weight: 800;
-}
-
-.quick-actions small {
-  display: block;
-  margin-top: 2px;
-  color: #94a3b8;
-  font-size: .58rem;
-}
-
-.arrow {
-  color: #cbd5e1;
-  font-size: .6rem;
-}
-
-
-/* =========================
-   RESPONSIVE
-========================= */
-
+/* RESPONSIVE */
 @media (max-width: 1100px) {
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dashboard-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
-
-  .main-area {
-    margin-left: 78px;
-  }
-
-  .main-area.sidebar-collapsed {
-    margin-left: 0;
-  }
-
-  .page-content {
-    padding: 20px;
-  }
-
-  .welcome-section {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
+  .main-area { margin-left: 78px; }
+  .main-area.sidebar-collapsed { margin-left: 0; }
+  .page-content { padding: 20px; }
+  .welcome-section { align-items: flex-start; flex-direction: column; padding: 20px; }
 }
 
 @media (max-width: 600px) {
-
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .welcome-section h1 {
-    font-size: 1.45rem;
-  }
-
+  .stats-grid { grid-template-columns: 1fr; }
+  .welcome-text-wrapper h1 { font-size: 1.5rem; }
 }
-
 </style>

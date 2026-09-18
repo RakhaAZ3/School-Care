@@ -15,15 +15,10 @@ import LandingPage from '../views/LandingPage.vue'
 import PenggunaLandingPage from '../views/PenggunaLandingPage.vue'
 
 // ==========================================
-// ADMIN LAYOUT
+// ADMIN LAYOUT & PAGES
 // ==========================================
 
 import AdminDashboard from '../views/admin/AdminDashboard.vue'
-
-// ==========================================
-// ADMIN PAGES
-// ==========================================
-
 import FasilitasView from '../views/FasilitasView.vue'
 import KategoriView from '../views/KategoriView.vue'
 import RuanganView from '../views/RuanganView.vue'
@@ -32,14 +27,17 @@ import MaintenanceView from '../views/MaintenanceView.vue'
 import PengajuanView from '../views/PengajuanView.vue'
 
 // ==========================================
-// PENGGUNA PAGES
+// PENGGUNA LAYOUT & PAGES
 // ==========================================
 
 import PenggunaDashboard from '../views/pengguna/PenggunaDashboard.vue'
+// Jika kamu punya file khusus untuk home dashboard, import di sini:
+// import PenggunaDashboardHome from '../views/pengguna/PenggunaDashboardHome.vue'
 import PenggunaFasilitas from '../views/pengguna/PenggunaFasilitas.vue'
 import PenggunaRuangan from '../views/pengguna/PenggunaRuangan.vue'
 import PenggunaPengajuan from '../views/pengguna/PenggunaPengajuan.vue'
 import PenggunaLaporan from '../views/pengguna/PenggunaLaporan.vue'
+import PenggunaDashboardHome from '../views/pengguna/PenggunaDashboardHome.vue'
 
 // ==========================================
 // ROUTES
@@ -84,42 +82,50 @@ const routes = [
   },
 
   // ========================================
-  // PENGGUNA PANEL
+  // PENGGUNA PANEL (Nested Routes)
   // ========================================
 
-  // Dashboard Pengguna
   {
-    path: '/pengguna/dashboard',
-    name: 'PenggunaDashboard',
-    component: PenggunaDashboard
-  },
+    path: '/pengguna',
+    component: PenggunaDashboard,
+    children: [
 
-  // Fasilitas Pengguna
-  {
-    path: '/pengguna/fasilitas',
-    name: 'PenggunaFasilitas',
-    component: PenggunaFasilitas
-  },
+      {
+        path: '',
+        redirect: '/pengguna/dashboard'
+      },
 
-  // Ruangan Pengguna
-  {
-    path: '/pengguna/ruangan',
-    name: 'PenggunaRuangan',
-    component: PenggunaRuangan
-  },
+      {
+        path: 'dashboard',
+        name: 'PenggunaDashboardHome',
+        component: PenggunaDashboardHome // Ubah ini ke komponen khusus dashboard kamu (misal: PenggunaDashboardHome) bila sudah ada
+      },
 
-  // Pengajuan Pengguna
-  {
-    path: '/pengguna/pengajuan',
-    name: 'PenggunaPengajuan',
-    component: PenggunaPengajuan
-  },
+      {
+        path: 'fasilitas',
+        name: 'PenggunaFasilitas',
+        component: PenggunaFasilitas
+      },
 
-  // Laporan Pengguna
-  {
-    path: '/pengguna/laporan',
-    name: 'PenggunaLaporan',
-    component: PenggunaLaporan
+      {
+        path: 'ruangan',
+        name: 'PenggunaRuangan',
+        component: PenggunaRuangan
+      },
+
+      {
+        path: 'pengajuan',
+        name: 'PenggunaPengajuan',
+        component: PenggunaPengajuan
+      },
+
+      {
+        path: 'laporan',
+        name: 'PenggunaLaporan',
+        component: PenggunaLaporan
+      }
+
+    ]
   },
 
   // ========================================
@@ -132,10 +138,6 @@ const routes = [
 
     children: [
 
-      // ====================================
-      // DASHBOARD ADMIN
-      // ====================================
-
       {
         path: '',
         redirect: '/admin/dashboard'
@@ -146,19 +148,11 @@ const routes = [
         name: 'AdminDashboardHome'
       },
 
-      // ====================================
-      // RUANGAN ADMIN
-      // ====================================
-
       {
         path: 'ruangan',
         name: 'AdminRuangan',
         component: RuanganView
       },
-
-      // ====================================
-      // FASILITAS ADMIN
-      // ====================================
 
       {
         path: 'fasilitas',
@@ -166,19 +160,11 @@ const routes = [
         component: FasilitasView
       },
 
-      // ====================================
-      // KATEGORI ADMIN
-      // ====================================
-
       {
         path: 'kategori',
         name: 'AdminKategori',
         component: KategoriView
       },
-
-      // ====================================
-      // PENGAJUAN ADMIN
-      // ====================================
 
       {
         path: 'pengajuan',
@@ -186,19 +172,11 @@ const routes = [
         component: PengajuanView
       },
 
-      // ====================================
-      // LAPORAN ADMIN
-      // ====================================
-
       {
         path: 'laporan',
         name: 'AdminLaporan',
         component: LaporanView
       },
-
-      // ====================================
-      // MAINTENANCE ADMIN
-      // ====================================
 
       {
         path: 'maintenance',

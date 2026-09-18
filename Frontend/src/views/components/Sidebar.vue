@@ -1,238 +1,104 @@
 <template>
-  <aside
-    class="sidebar"
-    :class="{ collapsed: isCollapsed }"
-  >
+  <aside class="sidebar-pro" :class="{ collapsed: isCollapsed }">
 
-    <!-- BRAND -->
+    <!-- BRAND / LOGO -->
     <div class="brand">
-
-      <div class="brand-logo">
+      <div class="brand-logo-glow">
         <i class="fa-solid fa-school"></i>
       </div>
-
-      <div
-        v-if="!isCollapsed"
-        class="brand-text"
-      >
+      <div v-if="!isCollapsed" class="brand-text">
         <strong>SchoolCare</strong>
         <span>School Management</span>
       </div>
-
     </div>
 
-
-    <!-- TOGGLE -->
-    <button
-      class="collapse-button"
-      type="button"
-      @click="$emit('toggle-sidebar')"
-    >
-      <i
-        class="fa-solid"
-        :class="
-          isCollapsed
-            ? 'fa-angle-right'
-            : 'fa-angle-left'
-        "
-      ></i>
+    <!-- TOGGLE BUTTON -->
+    <button class="collapse-button" type="button" @click="$emit('toggle-sidebar')" title="Tutup/Buka Sidebar">
+      <i class="fa-solid" :class="isCollapsed ? 'fa-angle-right' : 'fa-angle-left'"></i>
     </button>
 
-
-    <!-- PROFILE -->
-    <div
-      v-if="!isCollapsed"
-      class="admin-profile"
-    >
+    <!-- ADMIN PROFILE -->
+    <div v-if="!isCollapsed" class="admin-profile">
       <div class="profile-avatar">
-        A
+        <span>A</span>
+        <span class="status-indicator-dot"></span>
       </div>
-
-      <div>
+      <div class="profile-info">
         <strong>Admin Sekolah</strong>
         <span>Administrator</span>
       </div>
     </div>
 
-
-    <!-- MENU -->
+    <!-- MENU NAVIGATION -->
     <nav class="sidebar-nav">
+      <span v-if="!isCollapsed" class="menu-title">MENU UTAMA</span>
 
-      <span
-        v-if="!isCollapsed"
-        class="menu-title"
-      >
-        MENU UTAMA
-      </span>
-
-
-      <!-- DASHBOARD -->
-      <button
-        class="nav-item"
-        :class="{ active: currentTab === 'dashboard' }"
-        type="button"
-        @click="changeTab('dashboard')"
-      >
+      <!-- Dashboard -->
+      <button class="nav-item" :class="{ active: currentTab === 'dashboard' }" type="button" @click="changeTab('dashboard')">
         <i class="fa-solid fa-chart-pie"></i>
-
-        <span v-if="!isCollapsed">
-          Dashboard
-        </span>
+        <span v-if="!isCollapsed">Dashboard</span>
       </button>
 
-
-      <!-- RUANGAN -->
-      <button
-         class="nav-item"
-         :class="{ active: currentTab === 'ruangan' }"
-         type="button"
-         @click="changeTab('ruangan')"
-         >
-          <i class="fa-solid fa-door-open"></i>
-
-          <span v-if="!isCollapsed">
-          Ruangan
-          </span>
-         </button>
-
-
-      <!-- FASILITAS -->
-      <button
-         class="nav-item"
-         :class="{ active: currentTab === 'fasilitas' }"
-         type="button"
-         @click="changeTab('fasilitas')"
-         >
-          <i class="fa-solid fa-boxes-stacked"></i>
-
-          <span v-if="!isCollapsed">
-          Fasilitas
-          </span>
-         </button>
-
-
-      <!-- KATEGORI -->
-      <button
-         class="nav-item"
-         :class="{ active: currentTab === 'kategori' }"
-         type="button"
-         @click="changeTab('kategori')"
-         >
-          <i class="fa-solid fa-layer-group"></i>
-
-          <span v-if="!isCollapsed">
-          Kategori
-          </span>
-         </button>
-
-
-      <!-- PENGAJUAN -->
-      
-         <button
-         class="nav-item"
-         :class="{ active: currentTab === 'pengajuan' }"
-         type="button"
-         @click="changeTab('pengajuan')"
-         >
-          <i class="fa-solid fa-file-circle-check"></i>
-
-          <span v-if="!isCollapsed">
-          Pengajuan
-          </span>
-        <small
-          v-if="!isCollapsed && pendingCount > 0"
-          class="badge"
-        >
-          {{ pendingCount }}
-        </small>
+      <!-- Ruangan -->
+      <button class="nav-item" :class="{ active: currentTab === 'ruangan' }" type="button" @click="changeTab('ruangan')">
+        <i class="fa-solid fa-door-open"></i>
+        <span v-if="!isCollapsed">Ruangan</span>
       </button>
 
+      <!-- Fasilitas -->
+      <button class="nav-item" :class="{ active: currentTab === 'fasilitas' }" type="button" @click="changeTab('fasilitas')">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span v-if="!isCollapsed">Fasilitas</span>
+      </button>
 
-      <!-- LAPORAN -->
-     <button
-         class="nav-item"
-         :class="{ active: currentTab === 'laporan' }"
-         type="button"
-         @click="changeTab('laporan')"
-         >
-          <i class="fa-solid fa-triangle-exclamation"></i>
+      <!-- Kategori -->
+      <button class="nav-item" :class="{ active: currentTab === 'kategori' }" type="button" @click="changeTab('kategori')">
+        <i class="fa-solid fa-layer-group"></i>
+        <span v-if="!isCollapsed">Kategori</span>
+      </button>
 
-          <span v-if="!isCollapsed">
-          Laporan
-          </span>
-          </button  >
+      <!-- Pengajuan -->
+      <button class="nav-item" :class="{ active: currentTab === 'pengajuan' }" type="button" @click="changeTab('pengajuan')">
+        <i class="fa-solid fa-file-circle-check"></i>
+        <span v-if="!isCollapsed">Pengajuan</span>
+        <small v-if="!isCollapsed && pendingCount > 0" class="badge">{{ pendingCount }}</small>
+        <!-- Badge mini khusus saat sidebar ditutup/collapsed -->
+        <span v-if="isCollapsed && pendingCount > 0" class="mini-badge-dot" :title="pendingCount + ' Pengajuan baru'"></span>
+      </button>
 
+      <!-- Laporan -->
+      <button class="nav-item" :class="{ active: currentTab === 'laporan' }" type="button" @click="changeTab('laporan')">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span v-if="!isCollapsed">Laporan</span>
+      </button>
 
-
-      <!-- MAINTENANCE -->
-      <button
-         class="nav-item"
-         :class="{ active: currentTab === 'maintenance' }"
-         type="button"
-         @click="changeTab('maintenance')"
-         >
-          <i class="fa-solid fa-screwdriver-wrench"></i>
-
-          <span v-if="!isCollapsed">
-          Maintenance
-          </span>
-          </button>
-
+      <!-- Maintenance -->
+      <button class="nav-item" :class="{ active: currentTab === 'maintenance' }" type="button" @click="changeTab('maintenance')">
+        <i class="fa-solid fa-screwdriver-wrench"></i>
+        <span v-if="!isCollapsed">Maintenance</span>
+      </button>
     </nav>
 
-
-    <!-- BOTTOM -->
-    <div class="sidebar-bottom">
-
-      <div
-        v-if="!isCollapsed"
-        class="system-status"
-      >
-        <span class="status-dot"></span>
-
-        <div>
-          <strong>Sistem Online</strong>
-          <small>Semua layanan aktif</small>
-        </div>
-      </div>
-
-
-      <button
-        class="logout-button"
-        type="button"
-        @click="$emit('logout')"
-      >
-        <i class="fa-solid fa-right-from-bracket"></i>
-
-        <span v-if="!isCollapsed">
-          Keluar
-        </span>
-      </button>
-
-    </div>
-
+    <!-- SIDEBAR BOTTOM -->
+   
+      
   </aside>
 </template>
 
 <script setup>
-
-const props = defineProps({
-
+defineProps({
   currentTab: {
     type: String,
     default: 'dashboard'
   },
-
   pendingCount: {
     type: Number,
     default: 0
   },
-
   isCollapsed: {
     type: Boolean,
     default: false
   }
-
 })
 
 const emit = defineEmits([
@@ -244,78 +110,54 @@ const emit = defineEmits([
 const changeTab = (tab) => {
   emit('change-tab', tab)
 }
-
 </script>
 
 <style scoped>
-
-.sidebar {
+.sidebar-pro {
   position: fixed;
   top: 0;
   left: 0;
   z-index: 1000;
-
-  width: 250px;
+  width: 260px;
   height: 100vh;
-
   display: flex;
   flex-direction: column;
-
-  padding: 20px 14px;
-
+  padding: 20px 16px;
   background: #ffffff;
   border-right: 1px solid #e2e8f0;
-
-  transition: width .3s ease;
-
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  box-shadow: 4px 0 20px rgba(15, 23, 42, 0.02);
 }
 
-.sidebar.collapsed {
-  width: 78px;
+.sidebar-pro.collapsed {
+  width: 84px;
+  padding: 20px 12px;
 }
-
 
 /* BRAND */
-
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
-
-  padding: 4px 9px 22px;
+  gap: 12px;
+  padding: 4px 8px 24px;
 }
 
-.brand-logo {
-  width: 38px;
-  height: 38px;
-
+.brand-logo-glow {
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 11px;
-
-  color: #fff;
-
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #7c3aed
-    );
-
-  box-shadow:
-    0 7px 15px rgba(37, 99, 235, .2);
+  border-radius: 12px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
-.brand-logo i {
-  font-size: .9rem;
+.brand-logo-glow i {
+  font-size: 1rem;
 }
 
 .brand-text {
@@ -325,151 +167,141 @@ const changeTab = (tab) => {
 
 .brand-text strong {
   color: #0f172a;
-  font-size: .85rem;
+  font-size: 0.95rem;
   font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
 .brand-text span {
   margin-top: 2px;
-  color: #94a3b8;
-  font-size: .55rem;
+  color: #64748b;
+  font-size: 0.7rem;
 }
 
-
-/* TOGGLE */
-
+/* TOGGLE BUTTON */
 .collapse-button {
   position: absolute;
-  top: 25px;
+  top: 28px;
   right: -12px;
-
-  width: 24px;
-  height: 24px;
-
+  width: 26px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
   border-radius: 50%;
-
-  background: #fff;
+  background: #ffffff;
   color: #64748b;
-
   cursor: pointer;
-
-  box-shadow: 0 3px 10px rgba(15, 23, 42, .08);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+  transition: all 0.2s ease;
 }
 
 .collapse-button:hover {
-  color: #2563eb;
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
 }
 
-
 /* PROFILE */
-
 .admin-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
-
-  margin: 5px 4px 20px;
+  gap: 12px;
+  margin: 0 0 20px;
   padding: 12px;
-
   background: #f8fafc;
   border: 1px solid #f1f5f9;
-  border-radius: 13px;
+  border-radius: 14px;
 }
 
 .profile-avatar {
-  width: 35px;
-  height: 35px;
-
+  position: relative;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 10px;
-
-  color: #fff;
-  background: linear-gradient(
-    135deg,
-    #2563eb,
-    #7c3aed
-  );
-
-  font-size: .7rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  font-size: 0.85rem;
   font-weight: 800;
 }
 
-.admin-profile div:last-child {
+.status-indicator-dot {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+}
+
+.profile-info {
   display: flex;
   flex-direction: column;
 }
 
-.admin-profile strong {
-  color: #334155;
-  font-size: .65rem;
-  font-weight: 800;
+.profile-info strong {
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
-.admin-profile span {
+.profile-info span {
   margin-top: 2px;
-  color: #94a3b8;
-  font-size: .55rem;
+  color: #64748b;
+  font-size: 0.7rem;
 }
 
-
-/* MENU */
-
+/* MENU NAVIGATION */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-
+  gap: 6px;
   flex: 1;
-
   overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 4px;
 }
 
 .menu-title {
-  margin: 0 10px 8px;
-
+  margin: 4px 10px 8px;
   color: #94a3b8;
-  font-size: .52rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  letter-spacing: .1em;
+  letter-spacing: 0.08em;
 }
 
 .nav-item {
   position: relative;
-
   width: 100%;
-
   display: flex;
   align-items: center;
-  gap: 12px;
-
-  min-height: 43px;
-
-  padding: 0 12px;
-
+  gap: 14px;
+  min-height: 44px;
+  padding: 0 14px;
   border: 0;
-  border-radius: 11px;
-
+  border-radius: 12px;
   background: transparent;
-
   color: #64748b;
-
   font-family: inherit;
-  font-size: .68rem;
+  font-size: 0.85rem;
   font-weight: 600;
-
   text-align: left;
-
   cursor: pointer;
-
-  transition: .2s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar.collapsed .nav-item {
@@ -478,13 +310,10 @@ const changeTab = (tab) => {
 }
 
 .nav-item i {
-  width: 18px;
-
+  width: 20px;
   flex-shrink: 0;
-
   text-align: center;
-
-  font-size: .78rem;
+  font-size: 0.95rem;
 }
 
 .nav-item:hover {
@@ -495,118 +324,139 @@ const changeTab = (tab) => {
 .nav-item.active {
   color: #2563eb;
   background: #eff6ff;
-  font-weight: 800;
+  font-weight: 700;
 }
 
+/* Garis Indikator Aktif di Sebelah Kiri */
 .nav-item.active::before {
   content: '';
-
   position: absolute;
   left: 0;
-
-  width: 3px;
-  height: 20px;
-
-  border-radius: 0 5px 5px 0;
-
+  width: 4px;
+  height: 22px;
+  border-radius: 0 4px 4px 0;
   background: #2563eb;
 }
 
 .badge {
   margin-left: auto;
-
   min-width: 20px;
-  padding: 3px 6px;
-
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
   border-radius: 20px;
-
   background: #ef4444;
-  color: #fff;
-
-  font-size: .5rem;
+  color: #ffffff;
+  font-size: 0.65rem;
   font-weight: 800;
-
-  text-align: center;
 }
 
+.mini-badge-dot {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1px solid #ffffff;
+}
 
-/* BOTTOM */
-
+/* SIDEBAR BOTTOM */
 .sidebar-bottom {
   margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .system-status {
   display: flex;
   align-items: center;
-  gap: 9px;
-
-  margin-bottom: 10px;
-  padding: 11px;
-
+  gap: 10px;
+  padding: 10px 12px;
   background: #f8fafc;
   border: 1px solid #f1f5f9;
   border-radius: 12px;
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #22c55e;
-
-  box-shadow: 0 0 0 4px #dcfce7;
+/* Animasi Ping/Pulse Status Online */
+.pulse-dot-wrapper {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.system-status div {
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  z-index: 2;
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: rgba(34, 197, 94, 0.3);
+  border-radius: 50%;
+  animation: pulseAnimation 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes pulseAnimation {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.status-text-box {
   display: flex;
   flex-direction: column;
 }
 
-.system-status strong {
-  color: #475569;
-  font-size: .58rem;
+.status-text-box strong {
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
-.system-status small {
-  margin-top: 2px;
+.status-text-box small {
+  margin-top: 1px;
   color: #94a3b8;
-  font-size: .5rem;
+  font-size: 0.65rem;
 }
-
 
 .logout-button {
   width: 100%;
   min-height: 42px;
-
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-
   border: 0;
-  border-radius: 11px;
-
+  border-radius: 12px;
   background: #fef2f2;
   color: #dc2626;
-
   font-family: inherit;
-  font-size: .65rem;
+  font-size: 0.8rem;
   font-weight: 700;
-
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .logout-button:hover {
   background: #fee2e2;
+  color: #b91c1c;
 }
 
 .logout-button i {
-  font-size: .75rem;
+  font-size: 0.9rem;
 }
-
 </style>

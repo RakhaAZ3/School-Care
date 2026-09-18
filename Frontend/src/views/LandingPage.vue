@@ -33,17 +33,17 @@
         <h1>Kelola Fasilitas & Barang Sekolah Lebih <span class="text-gradient">Cerdas & Efisien</span></h1>
         <p>Platform terintegrasi untuk pengajuan peminjaman alat, pengelolaan ruangan, pelaporan kerusakan, hingga pengadaan barang baru dalam satu genggaman interaktif.</p>
         <div class="hero-buttons">
-          <button class="btn-primary" @click="handleNavigate('fasilitas')">
-            <span>📦 Fasilitas</span>
+          <button class="btn-primary" @click="handleLoginAction">
+            Mulai Kelola Sekarang
           </button>
-          <button class="btn-outline" @click="handleNavigate('laporan')">
-            <span>🚨 Laporkan Kerusakan</span>
+          <button class="btn-outline" @click="scrollToSection('fitur')">
+            Jelajahi Fitur
           </button>
         </div>
       </div>
 
-      <!-- Hero Visual Card Preview -->
-      <div class="hero-preview-card">
+      <!-- Hero Visual Card Preview (Interaktif / Dinamis) -->
+      <div class="hero-preview-card" @click="handleLoginAction" title="Klik untuk masuk ke dashboard">
         <div class="preview-header">
           <div class="dots-group">
             <div class="dot red"></div>
@@ -61,83 +61,95 @@
               <span class="mini-icon blue-bg">📦</span>
               <div>
                 <small>Total Fasilitas</small>
-                <h4>142 Unit</h4>
+                <h4>{{ liveStats.totalFasilitas }} Unit</h4>
               </div>
             </div>
             <div class="mini-box">
               <span class="mini-icon purple-bg">🏫</span>
               <div>
                 <small>Ruangan Aktif</small>
-                <h4>28 Ruang</h4>
+                <h4>{{ liveStats.totalRuangan }} Ruang</h4>
               </div>
             </div>
           </div>
           <div class="preview-banner-box">
             <div class="banner-info">
               <h5>Peminjaman Disetujui ⚡</h5>
-              <p>Proyektor Epson Lab 1 siap digunakan hari ini.</p>
+              <p>Sistem sinkronisasi backend aktif dan berjalan normal.</p>
             </div>
-            <span class="badge-active">Live System</span>
+            <span class="badge-active">{{ isApiConnected ? 'Live Connected' : 'Connecting...' }}</span>
           </div>
         </div>
       </div>
     </header>
 
-    <!-- Features Section -->
+    <!-- Features Section (Sekarang Bisa Diklik & Berfungsi) -->
     <section id="fitur" class="features-section">
       <div class="section-title">
-        <h2>Semua Kebutuhan Inventaris <span class="text-gradient">Dalam Satu Tempat</span></h2>
-        <p>Akses berbagai fitur esensial untuk mendukung kegiatan belajar mengajar dan operasional sekolah secara instan.</p>
+        <h2>Fitur Unggulan <span class="text-gradient">SchoolCare</span></h2>
+        <p>Dirancang khusus untuk mempermudah tugas administrator dan pengurus sarpras sekolah.</p>
       </div>
 
       <div class="feature-grid">
-        <div class="feature-card" @click="handleNavigate('kategori')">
-          <div class="feature-icon blue">📦</div>
-          <h3>Kategori Fasilitas</h3>
-          <p>Jelajahi berbagai kategori fasilitas yang tersedia di sekolah.</p>
-          <span class="link-arrow">Jelajahi Modul <span class="arrow-symbol">→</span></span>
-        </div>
-
-        <div class="feature-card" @click="handleNavigate('ruangan')">
-          <div class="feature-icon purple">🏫</div>
+        <div class="feature-card" @click="navigateToFeature('/admin/ruangan')">
+          <div class="feature-icon blue">🏫</div>
           <h3>Manajemen Ruangan</h3>
-          <p>Cek ketersediaan ruang kelas, lab komputer, dan aula sekolah secara real-time.</p>
-          <span class="link-arrow">Jelajahi Modul <span class="arrow-symbol">→</span></span>
+          <p>Pantau kondisi, kapasitas, gedung, lantai, dan skor kesehatan fasilitas ruangan secara berkala.</p>
+          <div class="link-arrow">
+            <span>Kelola Ruangan</span>
+            <span class="arrow-symbol">→</span>
+          </div>
         </div>
 
-        <div class="feature-card" @click="handleNavigate('maintenance')">
-          <div class="feature-icon orange">🔧</div>
-          <h3>Maintenance & Perbaikan</h3>
-          <p>Laporkan fasilitas rusak dan pantau status perbaikan oleh tim teknisi sekolah.</p>
-          <span class="link-arrow">Jelajahi Modul <span class="arrow-symbol">→</span></span>
+        <div class="feature-card" @click="navigateToFeature('/admin/barang')">
+          <div class="feature-icon purple">📦</div>
+          <h3>Inventaris Barang</h3>
+          <p>Catat masuk-keluarnya aset barang sekolah, status ketersediaan, hingga penanggung jawab alat.</p>
+          <div class="link-arrow">
+            <span>Cek Barang</span>
+            <span class="arrow-symbol">→</span>
+          </div>
         </div>
 
-        <div class="feature-card" @click="handleNavigate('pengajuan')">
-          <div class="feature-icon green">🛍️</div>
-          <h3>Pengajuan Barang Baru</h3>
-          <p>Ajukan kebutuhan inventaris atau alat pendukung pembelajaran baru dengan estimasi biaya.</p>
-          <span class="link-arrow">Jelajahi Modul <span class="arrow-symbol">→</span></span>
+        <div class="feature-card" @click="navigateToFeature('/admin/peminjaman')">
+          <div class="feature-icon orange">📋</div>
+          <h3>Persetujuan Peminjaman</h3>
+          <p>Validasi pengajuan peminjaman alat oleh guru atau siswa dengan sekali klik secara transparan.</p>
+          <div class="link-arrow">
+            <span>Daftar Request</span>
+            <span class="arrow-symbol">→</span>
+          </div>
+        </div>
+
+        <div class="feature-card" @click="navigateToFeature('/admin/laporan')">
+          <div class="feature-icon green">📊</div>
+          <h3>Laporan & Statistik</h3>
+          <p>Analisis performa kerusakan, rekapitulasi aset, dan unduh laporan berkala dalam format bersih.</p>
+          <div class="link-arrow">
+            <span>Lihat Laporan</span>
+            <span class="arrow-symbol">→</span>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Statistics Section -->
+    <!-- Statistics Section (Terhubung ke Backend) -->
     <section id="statistik" class="stats-section">
       <div class="stat-box-item">
-        <h2>150+</h2>
+        <h2>{{ liveStats.totalFasilitas || '150' }}+</h2>
         <p>Fasilitas Sekolah Terdaftar</p>
       </div>
       <div class="stat-box-item">
-        <h2>98%</h2>
-        <p>Tingkat Kepuasan Layanan</p>
+        <h2>{{ liveStats.rataRataScore || '98' }}%</h2>
+        <p>Rata-rata Skor Kesehatan Aset</p>
       </div>
       <div class="stat-box-item">
         <h2>24/7</h2>
         <p>Sistem Pemantauan Aset</p>
       </div>
       <div class="stat-box-item">
-        <h2>0</h2>
-        <p>Kehilangan Tanpa Lacak</p>
+        <h2>{{ liveStats.totalRuangan || '28' }}</h2>
+        <p>Gedung & Ruangan Terkontrol</p>
       </div>
     </section>
 
@@ -180,31 +192,73 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import api from '../utils/api' // Sesuaikan path utils api kamu
 
 const router = useRouter()
 const isLoggedIn = ref(false)
+const isApiConnected = ref(false)
 
-// Cek status login saat halaman dimuat
-onMounted(() => {
+// State untuk menampung data statistik real dari backend
+const liveStats = ref({
+  totalFasilitas: 142,
+  totalRuangan: 28,
+  rataRataScore: 98
+})
+
+// Cek status login & Ambil data dari backend saat halaman dimuat
+onMounted(async () => {
   const statusLogin = localStorage.getItem('isLoggedIn')
   if (statusLogin === 'true') {
     isLoggedIn.value = true
   }
+
+  // Fetch data statistik nyata dari backend (jika server hidup)
+  try {
+    const [resRuangan, resBarang] = await Promise.all([
+      api.get('/ruangan').catch(() => null),
+      api.get('/barang').catch(() => null) // Sesuaikan endpoint backend kamu jika ada
+    ])
+
+    if (resRuangan && resRuangan.data) {
+      const dataRuangan = resRuangan.data.data || resRuangan.data
+      liveStats.value.totalRuangan = dataRuangan.length
+      
+      // Hitung rata-rata score jika ada properti score
+      const totalScore = dataRuangan.reduce((acc, curr) => acc + (curr.score || 100), 0)
+      if (dataRuangan.length > 0) {
+        liveStats.value.rataRataScore = Math.round(totalScore / dataRuangan.length)
+      }
+    }
+
+    if (resBarang && resBarang.data) {
+      const dataBarang = resBarang.data.data || resBarang.data
+      liveStats.value.totalFasilitas = dataBarang.length
+    }
+
+    isApiConnected.value = true
+  } catch (error) {
+    console.log('Backend belum terhubung secara penuh, menggunakan data cadangan.')
+    isApiConnected.value = false
+  }
 })
 
-// Fungsi aksi tombol login / dashboard (Diperbarui)
+// Fungsi aksi tombol login / dashboard dinamis
 const handleLoginAction = () => {
   if (isLoggedIn.value) {
-    // Jika sudah login, langsung ke halaman admin/dashboard
-    router.push('/admin')
+    router.push('/admin') // Langsung ke dashboard admin utama kamu
   } else {
-    // Jika belum login, arahkan ke halaman login
-    router.push('/login')
+    router.push('/login') // Menuju halaman login
   }
 }
 
-const handleNavigate = (pathName) => {
-  router.push(`/${pathName}`)
+// Navigasi cepat dari card fitur utama
+const navigateToFeature = (path) => {
+  if (isLoggedIn.value) {
+    router.push(path)
+  } else {
+    // Jika belum login, arahkan ke login dulu dengan pesan/simulasi
+    router.push('/login')
+  }
 }
 
 const scrollToSection = (sectionId) => {
@@ -439,11 +493,13 @@ html {
   border: 1px solid #e2e8f0;
   box-shadow: 0 24px 50px rgba(15, 23, 42, 0.1);
   overflow: hidden;
-  transition: transform 0.3s ease;
+  cursor: pointer;
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
 .hero-preview-card:hover {
   transform: translateY(-5px);
+  border-color: #2563eb;
 }
 
 .preview-header {

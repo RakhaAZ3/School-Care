@@ -1,36 +1,13 @@
 <template>
   <div class="pengguna-laporan">
-
     <!-- =========================
-         HEADER
+         HEADER UTAMA TENGAH (Gaya Seragam)
     ========================== -->
-    <header class="page-header">
-      <div class="header-left">
-        <button
-          type="button"
-          class="back-btn"
-          @click="goTo('/pengguna/dashboard')"
-        >
-          <i class="fa-solid fa-arrow-left"></i>
-        </button>
-
-        <div>
-          <h1>Laporan Kerusakan</h1>
-          <p>
-            Laporkan kerusakan fasilitas sekolah dengan mudah.
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="dashboard-btn"
-        @click="goTo('/pengguna/dashboard')"
-      >
-        <i class="fa-solid fa-house"></i>
-        Dashboard
-      </button>
-    </header>
+    <div class="content-header-center">
+      <div class="badge-header">Panel Pengguna</div>
+      <h1>Laporan Kerusakan</h1>
+      <p>Laporkan kerusakan fasilitas sekolah dengan mudah dan pantau status penanganannya.</p>
+    </div>
 
     <!-- =========================
          PAGE CONTENT
@@ -38,29 +15,9 @@
     <main class="page-content">
 
       <!-- =========================
-           PAGE INTRO
-      ========================== -->
-      <section class="intro-section">
-        <div>
-          <span class="page-label">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            Laporan
-          </span>
-
-          <h2>Lapor Kerusakan Fasilitas</h2>
-
-          <p>
-            Temukan fasilitas yang bermasalah? Laporkan agar dapat segera
-            ditindaklanjuti oleh pihak sekolah.
-          </p>
-        </div>
-      </section>
-
-      <!-- =========================
            FORM CARD
       ========================== -->
       <section class="report-card">
-
         <div class="card-title">
           <div class="title-icon">
             <i class="fa-solid fa-file-circle-exclamation"></i>
@@ -68,9 +25,7 @@
 
           <div>
             <h3>Buat Laporan Baru</h3>
-            <p>
-              Isi data kerusakan fasilitas di bawah ini.
-            </p>
+            <p>Isi data kerusakan fasilitas di bawah ini.</p>
           </div>
         </div>
 
@@ -79,8 +34,7 @@
           <!-- FASILITAS -->
           <div class="form-group">
             <label for="fasilitas">
-              Fasilitas
-              <span>*</span>
+              Fasilitas <span>*</span>
             </label>
 
             <select
@@ -113,8 +67,7 @@
           <!-- KONDISI -->
           <div class="form-group">
             <label for="kondisi">
-              Kondisi Kerusakan
-              <span>*</span>
+              Kondisi Kerusakan <span>*</span>
             </label>
 
             <select
@@ -143,8 +96,7 @@
           <!-- JUDUL -->
           <div class="form-group">
             <label for="judul">
-              Judul Laporan
-              <span>*</span>
+              Judul Laporan <span>*</span>
             </label>
 
             <input
@@ -159,8 +111,7 @@
           <!-- DESKRIPSI -->
           <div class="form-group">
             <label for="deskripsi">
-              Deskripsi Kerusakan
-              <span>*</span>
+              Deskripsi Kerusakan <span>*</span>
             </label>
 
             <textarea
@@ -175,8 +126,7 @@
           <!-- LOKASI -->
           <div class="form-group">
             <label for="lokasi">
-              Lokasi
-              <span>*</span>
+              Lokasi <span>*</span>
             </label>
 
             <input
@@ -224,7 +174,6 @@
 
           <!-- BUTTON -->
           <div class="form-actions">
-
             <button
               type="button"
               class="btn-secondary"
@@ -241,7 +190,6 @@
               <i class="fa-solid fa-paper-plane"></i>
               Kirim Laporan
             </button>
-
           </div>
 
         </form>
@@ -251,22 +199,11 @@
            RIWAYAT LAPORAN
       ========================== -->
       <section class="history-section">
-
         <div class="section-header">
-
           <div>
-            <span class="section-label">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-              Riwayat
-            </span>
-
             <h3>Riwayat Laporan Saya</h3>
-
-            <p>
-              Lihat laporan kerusakan yang pernah kamu buat.
-            </p>
+            <p>Lihat laporan kerusakan yang pernah kamu buat.</p>
           </div>
-
         </div>
 
         <!-- EMPTY STATE -->
@@ -296,13 +233,11 @@
             :key="report.id"
             class="report-item"
           >
-
             <div class="report-icon">
               <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
 
             <div class="report-content">
-
               <div class="report-top">
                 <h4>{{ report.judul }}</h4>
 
@@ -319,7 +254,6 @@
               </p>
 
               <div class="report-meta">
-
                 <span>
                   <i class="fa-solid fa-location-dot"></i>
                   {{ report.lokasi }}
@@ -329,14 +263,10 @@
                   <i class="fa-regular fa-calendar"></i>
                   {{ report.tanggal }}
                 </span>
-
               </div>
-
             </div>
-
           </div>
         </div>
-
       </section>
 
     </main>
@@ -353,17 +283,13 @@
   </div>
 </template>
 
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// ==========================================
 // FORM
-// ==========================================
-
 const form = ref({
   fasilitas: '',
   kondisi: '',
@@ -373,44 +299,19 @@ const form = ref({
   foto: null
 })
 
-// ==========================================
-// DATA FASILITAS
-// ==========================================
-
-// Sengaja kosong karena backend belum dibuat.
+// DATA FASILITAS & LAPORAN
 const facilities = ref([])
-
-// ==========================================
-// RIWAYAT LAPORAN
-// ==========================================
-
-// Sengaja kosong karena backend belum dibuat.
 const reports = ref([])
 
-// ==========================================
-// NAVIGATION
-// ==========================================
-
-const goTo = (path) => {
-  router.push(path)
-}
-
-// ==========================================
 // FILE
-// ==========================================
-
 const handleFile = (event) => {
   const file = event.target.files[0]
-
   if (file) {
     form.value.foto = file
   }
 }
 
-// ==========================================
 // SUBMIT
-// ==========================================
-
 const submitReport = () => {
   console.log('Data laporan:', {
     fasilitas: form.value.fasilitas,
@@ -426,10 +327,7 @@ const submitReport = () => {
   )
 }
 
-// ==========================================
 // RESET
-// ==========================================
-
 const resetForm = () => {
   form.value = {
     fasilitas: '',
@@ -441,39 +339,22 @@ const resetForm = () => {
   }
 
   const fileInput = document.getElementById('foto')
-
   if (fileInput) {
     fileInput.value = ''
   }
 }
 
-// ==========================================
 // STATUS
-// ==========================================
-
 const getStatusClass = (status) => {
-  if (status === 'Selesai') {
-    return 'status-selesai'
-  }
-
-  if (status === 'Diproses') {
-    return 'status-diproses'
-  }
-
-  if (status === 'Ditolak') {
-    return 'status-ditolak'
-  }
-
+  if (status === 'Selesai') return 'status-selesai'
+  if (status === 'Diproses') return 'status-diproses'
+  if (status === 'Ditolak') return 'status-ditolak'
   return 'status-menunggu'
 }
 
-// ==========================================
 // YEAR
-// ==========================================
-
 const currentYear = new Date().getFullYear()
 </script>
-
 
 <style scoped>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css');
@@ -482,101 +363,47 @@ const currentYear = new Date().getFullYear()
   box-sizing: border-box;
 }
 
-/* =========================================
-   GLOBAL
-========================================= */
-
 .pengguna-laporan {
   min-height: 100vh;
   background: #f8fafc;
   color: #0f172a;
-  font-family:
-    'Plus Jakarta Sans',
-    'Inter',
-    sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
   padding: 30px 40px;
   display: flex;
   flex-direction: column;
 }
 
-/* =========================================
-   HEADER
-========================================= */
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 30px;
+/* HEADER TENGAH GAYA SERAGAM */
+.content-header-center {
+  text-align: center;
+  margin-bottom: 28px;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.back-btn {
-  width: 42px;
-  height: 42px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  color: #475569;
-  border-radius: 11px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.back-btn:hover {
+.badge-header {
+  display: inline-block;
+  background: #eff6ff;
   color: #2563eb;
-  border-color: #bfdbfe;
-  transform: translateX(-2px);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
-.back-btn i {
-  font-size: 14px;
-}
-
-.page-header h1 {
-  margin: 0;
+.content-header-center h1 {
+  margin: 0 0 6px 0;
   font-size: 24px;
   font-weight: 800;
   color: #0f172a;
 }
 
-.page-header p {
-  margin: 5px 0 0;
+.content-header-center p {
+  margin: 0;
   color: #64748b;
-  font-size: 12px;
+  font-size: 13px;
 }
 
-.dashboard-btn {
-  border: 1px solid #dbeafe;
-  background: #eff6ff;
-  color: #2563eb;
-  padding: 11px 15px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-}
-
-.dashboard-btn:hover {
-  background: #dbeafe;
-}
-
-/* =========================================
-   PAGE CONTENT
-========================================= */
-
+/* PAGE CONTENT */
 .page-content {
   width: 100%;
   max-width: 1200px;
@@ -584,52 +411,13 @@ const currentYear = new Date().getFullYear()
   flex: 1;
 }
 
-/* =========================================
-   INTRO
-========================================= */
-
-.intro-section {
-  margin-bottom: 24px;
-}
-
-.page-label,
-.section-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  font-weight: 800;
-  color: #2563eb;
-  margin-bottom: 7px;
-}
-
-.page-header + .page-content h2,
-.intro-section h2 {
-  margin: 0 0 8px;
-  font-size: 26px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.intro-section p {
-  max-width: 680px;
-  margin: 0;
-  color: #64748b;
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-/* =========================================
-   REPORT CARD
-========================================= */
-
+/* REPORT CARD */
 .report-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 17px;
-  padding: 26px;
-  box-shadow:
-    0 8px 25px rgba(15, 23, 42, 0.04);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 30px;
   transition: all 0.2s ease;
 }
 
@@ -637,29 +425,21 @@ const currentYear = new Date().getFullYear()
   border-color: #dbeafe;
 }
 
-/* =========================================
-   CARD TITLE
-========================================= */
-
+/* CARD TITLE */
 .card-title {
   display: flex;
   align-items: center;
   gap: 13px;
-  margin-bottom: 25px;
-  padding-bottom: 20px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
   border-bottom: 1px solid #f1f5f9;
 }
 
 .title-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 13px;
-  background:
-    linear-gradient(
-      135deg,
-      #eff6ff,
-      #ede9fe
-    );
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #eff6ff;
   color: #2563eb;
   display: flex;
   align-items: center;
@@ -669,9 +449,9 @@ const currentYear = new Date().getFullYear()
 }
 
 .card-title h3 {
-  margin: 0 0 4px;
+  margin: 0 0 3px;
   color: #0f172a;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
 }
 
@@ -681,19 +461,16 @@ const currentYear = new Date().getFullYear()
   font-size: 12px;
 }
 
-/* =========================================
-   FORM
-========================================= */
-
+/* FORM */
 .form-group {
-  margin-bottom: 19px;
+  margin-bottom: 16px;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   color: #334155;
 }
 
@@ -706,10 +483,10 @@ const currentYear = new Date().getFullYear()
 .form-group textarea {
   width: 100%;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 9px;
   background: #f8fafc;
   color: #334155;
-  padding: 12px 14px;
+  padding: 10px 12px;
   font-family: inherit;
   font-size: 12px;
   outline: none;
@@ -727,38 +504,29 @@ const currentYear = new Date().getFullYear()
 .form-group textarea:focus {
   border-color: #2563eb;
   background: #ffffff;
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
 }
 
 .form-group textarea {
   resize: vertical;
-  min-height: 120px;
-}
-
-.form-group input::placeholder,
-.form-group textarea::placeholder {
-  color: #94a3b8;
+  min-height: 100px;
 }
 
 .form-info {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 7px;
+  margin-top: 6px;
   color: #64748b;
   font-size: 10px;
 }
 
-/* =========================================
-   UPLOAD
-========================================= */
-
+/* UPLOAD */
 .upload-box {
   position: relative;
-  min-height: 145px;
+  min-height: 130px;
   border: 1.5px dashed #cbd5e1;
-  border-radius: 13px;
+  border-radius: 11px;
   background: #f8fafc;
   overflow: hidden;
   transition: all 0.2s ease;
@@ -780,27 +548,26 @@ const currentYear = new Date().getFullYear()
 }
 
 .upload-content {
-  min-height: 145px;
+  min-height: 130px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   color: #64748b;
 }
 
 .upload-icon {
-  width: 43px;
-  height: 43px;
-  border-radius: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: #ffffff;
   color: #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 4px;
-  box-shadow:
-    0 4px 12px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 .upload-content strong {
@@ -816,28 +583,25 @@ const currentYear = new Date().getFullYear()
 .upload-content small {
   color: #2563eb;
   font-size: 10px;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
-/* =========================================
-   BUTTON
-========================================= */
-
+/* BUTTON */
 .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 25px;
-  padding-top: 20px;
+  margin-top: 22px;
+  padding-top: 18px;
   border-top: 1px solid #f1f5f9;
 }
 
 .btn-primary,
 .btn-secondary {
   border: none;
-  border-radius: 10px;
-  min-height: 42px;
-  padding: 0 18px;
+  border-radius: 9px;
+  height: 40px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -850,44 +614,35 @@ const currentYear = new Date().getFullYear()
 
 .btn-primary {
   color: #ffffff;
-  background:
-    linear-gradient(
-      135deg,
-      #2563eb,
-      #7c3aed
-    );
+  background: #2563eb;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 8px 20px rgba(37, 99, 235, 0.20);
+  background: #1d4ed8;
 }
 
 .btn-secondary {
   color: #475569;
   background: #f1f5f9;
+  border: 1px solid #e2e8f0;
 }
 
 .btn-secondary:hover {
   background: #e2e8f0;
 }
 
-/* =========================================
-   HISTORY
-========================================= */
-
+/* HISTORY */
 .history-section {
-  margin-top: 35px;
+  margin-top: 30px;
 }
 
 .section-header {
-  margin-bottom: 15px;
+  margin-bottom: 14px;
 }
 
 .section-header h3 {
-  margin: 0 0 5px;
-  font-size: 19px;
+  margin: 0 0 3px;
+  font-size: 16px;
   color: #0f172a;
   font-weight: 800;
 }
@@ -898,16 +653,13 @@ const currentYear = new Date().getFullYear()
   font-size: 12px;
 }
 
-/* =========================================
-   EMPTY STATE
-========================================= */
-
+/* EMPTY STATE */
 .empty-state {
-  min-height: 280px;
-  padding: 35px 20px;
+  min-height: 220px;
+  padding: 30px 20px;
   background: #ffffff;
   border: 1px dashed #cbd5e1;
-  border-radius: 17px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -916,25 +668,20 @@ const currentYear = new Date().getFullYear()
 }
 
 .empty-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 17px;
-  background:
-    linear-gradient(
-      135deg,
-      #eff6ff,
-      #ede9fe
-    );
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: #eff6ff;
   color: #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  margin-bottom: 15px;
+  font-size: 20px;
+  margin-bottom: 12px;
 }
 
 .empty-state h4 {
-  margin: 0 0 7px;
+  margin: 0 0 6px;
   color: #334155;
   font-size: 15px;
   font-weight: 800;
@@ -942,16 +689,13 @@ const currentYear = new Date().getFullYear()
 
 .empty-state p {
   margin: 0;
-  max-width: 450px;
+  max-width: 400px;
   color: #94a3b8;
   font-size: 11px;
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
-/* =========================================
-   REPORT LIST
-========================================= */
-
+/* REPORT LIST */
 .report-list {
   display: flex;
   flex-direction: column;
@@ -961,30 +705,22 @@ const currentYear = new Date().getFullYear()
 .report-item {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 15px;
-  padding: 17px;
+  border-radius: 14px;
+  padding: 16px;
   display: flex;
   gap: 14px;
   transition: all 0.2s ease;
 }
 
 .report-item:hover {
-  border-color: #bfdbfe;
-  transform: translateY(-2px);
-  box-shadow:
-    0 10px 24px rgba(15, 23, 42, 0.06);
+  border-color: #cbd5e1;
 }
 
 .report-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background:
-    linear-gradient(
-      135deg,
-      #eff6ff,
-      #ede9fe
-    );
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #eff6ff;
   color: #2563eb;
   display: flex;
   align-items: center;
@@ -994,6 +730,7 @@ const currentYear = new Date().getFullYear()
 
 .report-content {
   flex: 1;
+  min-width: 0;
 }
 
 .report-top {
@@ -1011,10 +748,10 @@ const currentYear = new Date().getFullYear()
 }
 
 .report-content > p {
-  margin: 7px 0 10px;
+  margin: 6px 0 10px;
   color: #64748b;
   font-size: 11px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .report-meta {
@@ -1031,105 +768,41 @@ const currentYear = new Date().getFullYear()
   gap: 5px;
 }
 
-/* =========================================
-   STATUS
-========================================= */
-
+/* STATUS */
 .status-badge {
-  padding: 5px 9px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
-.status-menunggu {
-  color: #b45309;
-  background: #fef3c7;
-}
+.status-menunggu { color: #d97706; background: #fffbeb; }
+.status-diproses { color: #2563eb; background: #eff6ff; }
+.status-selesai { color: #16a34a; background: #f0fdf4; }
+.status-ditolak { color: #dc2626; background: #fef2f2; }
 
-.status-diproses {
-  color: #2563eb;
-  background: #dbeafe;
-}
-
-.status-selesai {
-  color: #15803d;
-  background: #dcfce7;
-}
-
-.status-ditolak {
-  color: #dc2626;
-  background: #fee2e2;
-}
-
-/* =========================================
-   FOOTER
-========================================= */
-
+/* FOOTER */
 .footer {
   width: 100%;
-  margin-top: 35px;
-  padding: 20px 0 5px;
+  margin-top: auto;
+  padding-top: 15px;
   border-top: 1px solid #e2e8f0;
-}
-
-.footer p {
-  margin: 0;
-  color: #94a3b8;
   text-align: center;
-  font-size: 10px;
+  color: #94a3b8;
+  font-size: 11px;
 }
-
-/* =========================================
-   RESPONSIVE
-========================================= */
 
 @media (max-width: 700px) {
-
   .pengguna-laporan {
     padding: 20px;
   }
-
-  .page-header {
-    align-items: flex-start;
-  }
-
-  .dashboard-btn {
-    display: none;
-  }
-
-  .page-header h1 {
-    font-size: 20px;
-  }
-
-  .intro-section h2 {
-    font-size: 22px;
-  }
-
-  .report-card {
-    padding: 20px;
-  }
-
   .form-actions {
     flex-direction: column-reverse;
   }
-
   .btn-primary,
   .btn-secondary {
     width: 100%;
-  }
-
-  .report-top {
-    flex-direction: column;
-  }
-
-  .report-item {
-    padding: 15px;
-  }
-
-  .footer {
-    padding: 18px 0 5px;
   }
 }
 </style>
